@@ -314,3 +314,21 @@ an analytics engine
 a compliance/risk checker
 a cost optimization dashboard
 a reporting tool
+
+
+src/
+  components/
+    Sidebar.jsx
+  layouts/
+    AppLayout.jsx
+  pages/
+    Dashboard.jsx
+    UploadCenter.jsx
+    ImportsHistory.jsx
+    UsersAnalysis.jsx
+    CostOptimization.jsx
+    Compliance.jsx
+    Reports.jsx
+    Login.jsx
+  App.jsx
+  main.jsx
