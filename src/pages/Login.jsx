@@ -13,12 +13,25 @@ import {
   BadgeDollarSign,
   ShieldAlert,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { authApi } from "../utils/api";
 
 export default function Login() {
+  const navigate = useNavigate();
+
   const [tab, setTab] = useState("login");
   const [showLoginPass, setShowLoginPass] = useState(false);
   const [showRegisterPass, setShowRegisterPass] = useState(false);
   const [showConfirmPass, setShowConfirmPass] = useState(false);
+
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
+
+  const [loginData, setLoginData] = useState({
+    email: "admin@example.com",
+    password: "Admin@12345",
+  });
 
   const [registerData, setRegisterData] = useState({
     fullName: "",
@@ -41,6 +54,98 @@ export default function Login() {
     passwordStrength
   ];
 
+  const handleLoginChange = (e) => {
+    setLoginData((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
+  };
+
+  const handleRegisterChange = (e) => {
+    setRegisterData((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
+  };
+
+  const resetMessages = () => {
+    setErrorMsg("");
+    setSuccessMsg("");
+  };
+
+  const switchTab = (newTab) => {
+    setTab(newTab);
+    resetMessages();
+  };
+
+  const handleLoginSubmit = async (e) => {
+    e.preventDefault();
+    resetMessages();
+    setLoading(true);
+
+    try {
+      const data = await authApi.login({
+        email: loginData.email.trim(),
+        password: loginData.password,
+      });
+
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
+
+      setSuccessMsg("Login successful.");
+      navigate("/dashboard");
+    } catch (error) {
+      setErrorMsg(error.message || "Login failed.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRegisterSubmit = async (e) => {
+    e.preventDefault();
+    resetMessages();
+
+    const fullName = registerData.fullName.trim();
+    const email = registerData.email.trim();
+    const password = registerData.password;
+    const confirmPassword = registerData.confirmPassword;
+
+    if (!fullName || !email || !password || !confirmPassword) {
+      setErrorMsg("All fields are required.");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setErrorMsg("Passwords do not match.");
+      return;
+    }
+
+    if (password.length < 8) {
+      setErrorMsg("Password must be at least 8 characters.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const data = await authApi.register({
+        name: fullName,
+        email,
+        password,
+      });
+
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
+
+      setSuccessMsg("Account created successfully.");
+      navigate("/dashboard");
+    } catch (error) {
+      setErrorMsg(error.message || "Registration failed.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen overflow-hidden bg-[#020817] text-white">
       <div className="relative min-h-screen">
@@ -51,35 +156,30 @@ export default function Login() {
           <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.035)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.035)_1px,transparent_1px)] bg-[size:44px_44px]" />
         </div>
 
-        <div className="relative mx-auto grid min-h-screen max-w-7xl grid-cols-1 gap-10 px-6 py-8 lg:grid-cols-[1.05fr_0.95fr]">
+        <div className="relative mx-auto grid min-h-screen max-w-7xl grid-cols-1 gap-10 py-8 lg:grid-cols-[1.05fr_0.95fr] px-10">
           <section className="flex items-center">
-            <div className="max-w-2xl">
+            <div className="max-w-3xl">
               <div className="inline-flex items-center gap-2 rounded-full border border-cyan-400/25 bg-cyan-400/10 px-4 py-2 text-sm text-cyan-200 shadow-[0_0_30px_rgba(34,211,238,0.10)]">
                 <ShieldCheck size={16} />
                 Oracle Subscription Compliance Platform
               </div>
 
-              <div className="mt-8 max-w-xl">
-                <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs uppercase tracking-[0.25em] text-slate-300">
-                  <Sparkles size={14} className="text-cyan-300" />
-                  Enterprise intelligence
-                </div>
-
-                <h1 className="text-5xl font-semibold leading-[1.02] tracking-[-0.04em] text-white">
-                  Subscription control,
-                  <span className="block bg-gradient-to-r from-white via-cyan-100 to-cyan-300 bg-clip-text text-transparent">
-                    made premium.
+              <div className="mt-6 max-w-xl">
+                <h1 className="text-6xl font-semibold leading-[1.02] tracking-[-0.04em] text-white ">
+                  Subscription Control,
+                  <span className="block mt-3 bg-gradient-to-r from-white via-cyan-100 to-cyan-300 bg-clip-text text-transparent">
+                    Made Premium.
                   </span>
                 </h1>
 
-                <p className="mt-6 max-w-xl text-justify leading-8 text-slate-300">
+                <p className="mt-6 max-w-xl text-justify text-slate-300">
                   Centralize Oracle usage visibility, detect compliance risk,
                   and uncover savings opportunities with a workspace designed to
                   feel decisive, modern, and enterprise-grade.
                 </p>
               </div>
 
-              <div className="mt-10 grid max-w-xl grid-cols-1 gap-4 sm:grid-cols-3">
+              <div className="mt-8 grid grid-cols-3 gap-3">
                 <MetricCard
                   icon={<Activity size={18} />}
                   value="Usage"
@@ -97,7 +197,7 @@ export default function Login() {
                 />
               </div>
 
-              <div className="mt-10 grid max-w-2xl gap-4 sm:grid-cols-2">
+              <div className="mt-6 grid max-w-2xl gap-4 grid-cols-2">
                 <FeatureCard
                   title="Usage analytics"
                   text="Track dormant users, low-value access, and utilization patterns across imported Oracle reports."
@@ -112,11 +212,11 @@ export default function Login() {
 
           <section className="flex items-center justify-center lg:justify-end">
             <div className="relative w-full max-w-lg">
-              <div className="absolute -inset-0.5 rounded-[32px] bg-gradient-to-br from-cyan-400/25 via-blue-500/10 to-indigo-500/20 blur-xl" />
+              <div className="absolute -inset-0.5 rounded-xl bg-gradient-to-br from-cyan-400/25 via-blue-500/10 to-indigo-500/20 blur-xl" />
 
-              <div className="relative rounded-[32px] border border-white/10 bg-[rgba(15,23,42,0.78)] p-6 shadow-[0_25px_80px_rgba(0,0,0,0.45)] backdrop-blur-2xl sm:p-8">
+              <div className="relative rounded-xl border border-white/10 bg-[rgba(15,23,42,0.78)] p-6 shadow-md backdrop-blur-2xl sm:p-8">
                 <div className="mb-6 flex items-center gap-4">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-600 text-white shadow-[0_10px_30px_rgba(37,99,235,0.35)]">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-600 text-white shadow-md">
                     <ShieldCheck size={24} />
                   </div>
                   <div>
@@ -132,38 +232,57 @@ export default function Login() {
                 <div className="mb-6 grid grid-cols-2 rounded-2xl border border-white/10 bg-slate-950/50 p-1.5">
                   <button
                     type="button"
-                    onClick={() => setTab("login")}
+                    onClick={() => switchTab("login")}
                     className={`rounded-xl px-4 py-3 text-sm font-semibold transition ${
                       tab === "login"
-                        ? "bg-gradient-to-r from-cyan-400 to-blue-600 text-white shadow-lg"
-                        : "text-slate-300 hover:text-white"
+                        ? "bg-gradient-to-r from-cyan-600 to-blue-700 text-white shadow-lg"
+                        : "text-slate-200 hover:text-white"
                     }`}
                   >
                     Login
                   </button>
                   <button
                     type="button"
-                    onClick={() => setTab("register")}
+                    onClick={() => switchTab("register")}
                     className={`rounded-xl px-4 py-3 text-sm font-semibold transition ${
                       tab === "register"
-                        ? "bg-gradient-to-r from-cyan-400 to-blue-600 text-white shadow-lg"
-                        : "text-slate-300 hover:text-white"
+                        ? "bg-gradient-to-r from-cyan-600 to-blue-700 text-white shadow-lg"
+                        : "text-slate-200 hover:text-white"
                     }`}
                   >
                     Register
                   </button>
                 </div>
 
+                {errorMsg && (
+                  <div className="mb-4 rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+                    {errorMsg}
+                  </div>
+                )}
+
+                {successMsg && (
+                  <div className="mb-4 rounded-2xl border border-emerald-400/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
+                    {successMsg}
+                  </div>
+                )}
+
                 {tab === "login" ? (
-                  <form className="space-y-4">
+                  <form className="space-y-4" onSubmit={handleLoginSubmit}>
                     <Field
                       label="Email address"
                       icon={<Mail size={18} className="text-slate-400" />}
                       type="email"
+                      name="email"
+                      value={loginData.email}
+                      onChange={handleLoginChange}
                       placeholder="Enter your email"
                     />
+
                     <PasswordField
                       label="Password"
+                      name="password"
+                      value={loginData.password}
+                      onChange={handleLoginChange}
                       placeholder="Enter your password"
                       show={showLoginPass}
                       setShow={setShowLoginPass}
@@ -187,28 +306,40 @@ export default function Login() {
 
                     <button
                       type="submit"
-                      className="mt-2 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-400 to-blue-600 px-5 py-4 text-base font-semibold text-white shadow-[0_12px_30px_rgba(37,99,235,0.35)] transition hover:translate-y-[-1px]"
+                      disabled={loading}
+                      className="mt-2 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-600 to-blue-700 px-5 py-4 text-base font-semibold text-white shadow-md transition hover:translate-y-[-1px] disabled:cursor-not-allowed disabled:opacity-70"
                     >
-                      Sign in
-                      <ArrowRight size={18} />
+                      {loading ? "Signing in..." : "Sign in"}
+                      {!loading && <ArrowRight size={18} />}
                     </button>
                   </form>
                 ) : (
-                  <form className="space-y-4">
+                  <form className="space-y-4" onSubmit={handleRegisterSubmit}>
                     <Field
                       label="Full name"
                       icon={<User size={18} className="text-slate-400" />}
                       type="text"
+                      name="fullName"
+                      value={registerData.fullName}
+                      onChange={handleRegisterChange}
                       placeholder="Enter your full name"
                     />
+
                     <Field
                       label="Email address"
                       icon={<Mail size={18} className="text-slate-400" />}
                       type="email"
+                      name="email"
+                      value={registerData.email}
+                      onChange={handleRegisterChange}
                       placeholder="Enter your email"
                     />
+
                     <PasswordField
                       label="Password"
+                      name="password"
+                      value={registerData.password}
+                      onChange={handleRegisterChange}
                       placeholder="Create a password"
                       show={showRegisterPass}
                       setShow={setShowRegisterPass}
@@ -237,6 +368,9 @@ export default function Login() {
 
                     <PasswordField
                       label="Confirm password"
+                      name="confirmPassword"
+                      value={registerData.confirmPassword}
+                      onChange={handleRegisterChange}
                       placeholder="Re-enter password"
                       show={showConfirmPass}
                       setShow={setShowConfirmPass}
@@ -244,18 +378,14 @@ export default function Login() {
 
                     <button
                       type="submit"
-                      className="mt-2 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-400 to-blue-600 px-5 py-4 text-base font-semibold text-white shadow-[0_12px_30px_rgba(37,99,235,0.35)] transition hover:translate-y-[-1px]"
+                      disabled={loading}
+                      className="mt-2 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-600 to-blue-700 px-5 py-4 text-base font-semibold text-white shadow-md transition hover:translate-y-[-1px] disabled:cursor-not-allowed disabled:opacity-70"
                     >
-                      Create account
-                      <ArrowRight size={18} />
+                      {loading ? "Creating account..." : "Create account"}
+                      {!loading && <ArrowRight size={18} />}
                     </button>
                   </form>
                 )}
-
-                <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-xs leading-6 text-slate-400">
-                  Frontend-only authentication experience for design phase.
-                  Backend connection comes next.
-                </div>
               </div>
             </div>
           </section>
@@ -265,7 +395,7 @@ export default function Login() {
   );
 }
 
-function Field({ label, icon, type, placeholder }) {
+function Field({ label, icon, type, name, value, onChange, placeholder }) {
   return (
     <div>
       <label className="mb-2 block text-sm font-medium text-slate-200">
@@ -275,15 +405,27 @@ function Field({ label, icon, type, placeholder }) {
         {icon}
         <input
           type={type}
+          name={name}
+          value={value}
+          onChange={onChange}
           placeholder={placeholder}
           className="w-full bg-transparent text-white outline-none placeholder:text-slate-500"
+          required
         />
       </div>
     </div>
   );
 }
 
-function PasswordField({ label, placeholder, show, setShow }) {
+function PasswordField({
+  label,
+  name,
+  value,
+  onChange,
+  placeholder,
+  show,
+  setShow,
+}) {
   return (
     <div>
       <label className="mb-2 block text-sm font-medium text-slate-200">
@@ -293,12 +435,16 @@ function PasswordField({ label, placeholder, show, setShow }) {
         <Lock size={18} className="text-slate-400" />
         <input
           type={show ? "text" : "password"}
+          name={name}
+          value={value}
+          onChange={onChange}
           placeholder={placeholder}
           className="w-full bg-transparent text-white outline-none placeholder:text-slate-500"
+          required
         />
         <button
           type="button"
-          onClick={() => setShow(!show)}
+          onClick={() => setShow((prev) => !prev)}
           className="text-slate-400 transition hover:text-cyan-300"
         >
           {show ? <EyeOff size={18} /> : <Eye size={18} />}
