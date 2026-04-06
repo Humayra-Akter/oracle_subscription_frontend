@@ -332,3 +332,64 @@ src/
     Login.jsx
   App.jsx
   main.jsx
+
+  oracle_subscription_backend/
+├── prisma/
+│   ├── migrations/
+│   └── schema.prisma
+├── src/
+│   ├── config/
+│   │   └── prisma.js
+│   ├── middlewares/
+│   │   ├── auth.middleware.js
+│   │   ├── error.middleware.js
+│   │   └── upload.middleware.js
+│   ├── modules/
+│   │   ├── auth/
+│   │   │   ├── auth.controller.js
+│   │   │   ├── auth.routes.js
+│   │   │   ├── auth.service.js
+│   │   │   ├── auth.validation.js
+│   │   │   └── auth.utils.js
+│   │   ├── file/
+│   │   │   ├── file.controller.js
+│   │   │   ├── file.routes.js
+│   │   │   ├── file.service.js
+│   │   │   ├── file.validation.js
+│   │   │   └── file.utils.js
+│   │   ├── dashboard/
+│   │   │   ├── dashboard.controller.js
+│   │   │   ├── dashboard.routes.js
+│   │   │   └── dashboard.service.js
+│   │   ├── users-analysis/
+│   │   │   ├── usersAnalysis.controller.js
+│   │   │   ├── usersAnalysis.routes.js
+│   │   │   └── usersAnalysis.service.js
+│   │   ├── compliance/
+│   │   │   ├── compliance.controller.js
+│   │   │   ├── compliance.routes.js
+│   │   │   └── compliance.service.js
+│   │   ├── cost-optimization/
+│   │   │   ├── costOptimization.controller.js
+│   │   │   ├── costOptimization.routes.js
+│   │   │   └── costOptimization.service.js
+│   │   ├── import-history/
+│   │   │   ├── importHistory.controller.js
+│   │   │   ├── importHistory.routes.js
+│   │   │   └── importHistory.service.js
+│   │   └── reports/
+│   │       ├── reports.controller.js
+│   │       ├── reports.routes.js
+│   │       └── reports.service.js
+│   ├── routes/
+│   │   └── index.js
+│   ├── utils/
+│   │   ├── apiError.js
+│   │   ├── asyncHandler.js
+│   │   ├── jwt.js
+│   │   └── response.js
+│   ├── app.js
+│   └── server.js
+├── .env
+├── package.json
+└── prisma.config.ts
