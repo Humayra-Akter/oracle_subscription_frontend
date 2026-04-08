@@ -156,9 +156,9 @@ export default function Sidebar({ collapsed, setCollapsed }) {
 
             <button
               onClick={handleLogout}
-              className="flex w-full items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-3 text-white transition hover:bg-white/10"
+              className="flex w-full items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-white transition hover:bg-white/10"
             >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-black text-white">
+              <div className="flex h-5 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-black text-white">
                 <LogOut size={18} />
               </div>
 

@@ -1,31 +1,24 @@
 import { useState } from "react";
 import Sidebar from "../components/Sidebar";
 
-export default function AppLayout({ children, title, subtitle }) {
+export default function AppLayout({ title, subtitle, children }) {
   const [collapsed, setCollapsed] = useState(false);
 
   return (
-    <div className="min-h-screen bg-white text-black">
-      <div className="flex min-h-screen">
-        <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} />
+    <div className="flex h-screen overflow-hidden bg-neutral-50">
+      <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} />
 
-        <div className="flex-1 bg-white">
-          <div className="min-h-screen px-6 py-6 lg:px-8">
-            <header className="mb-6 rounded-xl border border-neutral-200 bg-white p-5">
-              <h1 className="text-2xl font-semibold tracking-tight text-black">
-                {title || "Dashboard"}
-              </h1>
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="shrink-0 border-b border-neutral-200 bg-white px-6 py-5">
+          <h1 className="text-2xl font-semibold text-black">{title}</h1>
+          {subtitle && (
+            <p className="mt-1 text-sm text-neutral-600">{subtitle}</p>
+          )}
+        </header>
 
-              {subtitle && (
-                <p className="mt-2 max-w-2xl text-sm text-neutral-600">
-                  {subtitle}
-                </p>
-              )}
-            </header>
-
-            <div className="space-y-6">{children}</div>
-          </div>
-        </div>
+        <main className="min-h-0 flex-1 overflow-y-auto px-6 py-6">
+          {children}
+        </main>
       </div>
     </div>
   );
