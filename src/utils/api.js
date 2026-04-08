@@ -1,10 +1,12 @@
-const API_BASE_URL = "http://localhost:5000/api";
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
 
 export const apiRequest = async (endpoint, options = {}) => {
   const token = localStorage.getItem("token");
+  const isFormData = options.body instanceof FormData;
 
   const headers = {
-    "Content-Type": "application/json",
+    ...(isFormData ? {} : { "Content-Type": "application/json" }),
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...(options.headers || {}),
   };
@@ -12,20 +14,45 @@ export const apiRequest = async (endpoint, options = {}) => {
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
     headers,
+    signal: options.signal,
   });
 
-  let data = {};
+  const contentType = response.headers.get("content-type") || "";
+  let data = null;
+
   try {
-    data = await response.json();
+    if (contentType.includes("application/json")) {
+      data = await response.json();
+    } else {
+      data = await response.text();
+    }
   } catch {
-    data = {};
+    data = null;
   }
 
   if (!response.ok) {
-    throw new Error(data.message || "Request failed");
+    const message =
+      (data && typeof data === "object" && data.message) || "Request failed";
+    const error = new Error(message);
+    error.status = response.status;
+    error.data = data;
+    throw error;
   }
 
   return data;
+};
+
+const toQueryString = (params = {}) => {
+  const searchParams = new URLSearchParams();
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (value === undefined || value === null) return;
+    if (String(value).trim() === "") return;
+    searchParams.set(key, String(value));
+  });
+
+  const query = searchParams.toString();
+  return query ? `?${query}` : "";
 };
 
 export const authApi = {
@@ -43,9 +70,47 @@ export const authApi = {
     });
   },
 
-  getMe: async () => {
+  getMe: async (signal) => {
     return apiRequest("/auth/me", {
       method: "GET",
+      signal,
     });
+  },
+};
+
+export const importHistoryApi = {
+  list: async (filters = {}, signal) => {
+    const query = toQueryString(filters);
+    const response = await apiRequest(`/import-history${query}`, {
+      method: "GET",
+      signal,
+    });
+
+    return response?.data || { items: [], stats: {} };
+  },
+
+  getById: async (id, signal) => {
+    const response = await apiRequest(`/import-history/${id}`, {
+      method: "GET",
+      signal,
+    });
+
+    return response?.data;
+  },
+
+  reprocess: async (id) => {
+    const response = await apiRequest(`/import-history/${id}/reprocess`, {
+      method: "POST",
+    });
+
+    return response?.data;
+  },
+
+  remove: async (id) => {
+    const response = await apiRequest(`/import-history/${id}`, {
+      method: "DELETE",
+    });
+
+    return response?.data;
   },
 };

@@ -1,36 +1,38 @@
+//src\components\StatusCard.jsx
+
 import { CheckCircle2, AlertCircle, Clock3, RefreshCw } from "lucide-react";
 
 const STATUS_STYLES = {
   success: {
-    border: "border-green-200 shadow-sm",
+    border: "border-green-200 shadow-sm hover:shadow-md",
     bg: "bg-gradient-to-br from-green-50 to-emerald-100",
     text: "text-emerald-800",
     sub: "text-emerald-600",
     icon: <CheckCircle2 size={18} />,
   },
   error: {
-    border: "border-red-200 shadow-sm",
+    border: "border-red-200 shadow-sm hover:shadow-md",
     bg: "bg-gradient-to-br from-red-50 to-rose-100",
     text: "text-red-700",
     sub: "text-red-600",
     icon: <AlertCircle size={18} />,
   },
   warning: {
-    border: "border-amber-200 shadow-sm",
+    border: "border-amber-200 shadow-sm hover:shadow-md",
     bg: "bg-gradient-to-br from-yellow-50 to-amber-100",
     text: "text-yellow-800",
     sub: "text-yellow-600",
     icon: <Clock3 size={18} />,
   },
   processing: {
-    border: "border-amber-200 shadow-sm",
+    border: "border-amber-200 shadow-sm hover:shadow-md",
     bg: "bg-gradient-to-br from-yellow-50 to-amber-100",
     text: "text-yellow-800",
     sub: "text-yellow-600",
     icon: <RefreshCw size={18} className="animate-spin" />,
   },
   default: {
-    border: "border-neutral-200 shadow-sm",
+    border: "border-neutral-200 shadow-sm hover:shadow-md",
     bg: "bg-gradient-to-br from-black/5 to-black/10",
     text: "text-black",
     sub: "text-neutral-600",

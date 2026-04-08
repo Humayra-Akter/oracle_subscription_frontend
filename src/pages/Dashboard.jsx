@@ -1,4 +1,5 @@
 import AppLayout from "../layouts/AppLayout";
+import StatusCard from "../components/StatusCard";
 
 export default function Dashboard() {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
@@ -9,10 +10,30 @@ export default function Dashboard() {
       subtitle="Monitor Oracle subscription activity, cost leakage, compliance exceptions, and reporting insights from one workspace."
     >
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-        <StatCard title="Total Licensed Users" value="1,248" change="+4.2%" />
-        <StatCard title="Inactive Users" value="187" change="-2.1%" />
-        <StatCard title="Potential Savings" value="$42,800" change="+8.7%" />
-        <StatCard title="Compliance Flags" value="29" change="+3 new" />
+        <StatusCard
+          title="Total Licensed Users"
+          value="1,248"
+          subtitle="+4.2% from last month"
+          status="success"
+        />
+        <StatusCard
+          title="Inactive Users"
+          value="187"
+          subtitle="-2.1% from last month"
+          status="warning"
+        />
+        <StatusCard
+          title="Potential Savings"
+          value="$42,800"
+          subtitle="+8.7% identified"
+          status="success"
+        />
+        <StatusCard
+          title="Compliance Flags"
+          value="29"
+          subtitle="+3 new issues"
+          status="error"
+        />
       </div>
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
@@ -34,16 +55,6 @@ export default function Dashboard() {
         </div>
       </div>
     </AppLayout>
-  );
-}
-
-function StatCard({ title, value, change }) {
-  return (
-    <div className="rounded-xl border border-neutral-200 bg-white p-6">
-      <p className="text-sm text-neutral-500">{title}</p>
-      <h3 className="mt-3 text-3xl font-semibold text-black">{value}</h3>
-      <p className="mt-2 text-sm text-neutral-600">{change}</p>
-    </div>
   );
 }
 

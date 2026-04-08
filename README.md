@@ -377,6 +377,7 @@ src/
 │   │   │   ├── importHistory.controller.js
 │   │   │   ├── importHistory.routes.js
 │   │   │   └── importHistory.service.js
+│   │   │   └── importHistory.validation.js
 │   │   └── reports/
 │   │       ├── reports.controller.js
 │   │       ├── reports.routes.js

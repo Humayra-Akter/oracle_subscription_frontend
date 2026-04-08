@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import AppLayout from "../layouts/AppLayout";
 import StatusCard from "../components/StatusCard";
+import { importHistoryApi } from "../utils/api";
 
 const REPORT_TYPES = [
   "All",
@@ -28,185 +29,212 @@ const REPORT_TYPES = [
 
 const STATUS_OPTIONS = ["All", "Completed", "Processing", "Queued", "Failed"];
 
-const SAMPLE_IMPORTS = [
-  {
-    id: "IMP-1008",
-    fileName: "usage_metrics_march.xlsx",
-    reportType: "SaaS Service Usage Metrics Drill Through Report",
-    uploadedAt: "2026-04-07T09:45:00",
-    status: "Completed",
-    fileSize: "2.4 MB",
-    rowsProcessed: 2481,
-    importedBy: "Admin",
-    message: "Import completed successfully.",
-    duplicate: false,
-  },
-  {
-    id: "IMP-1007",
-    fileName: "role_membership_q1.xlsx",
-    reportType: "User Role Membership Report",
-    uploadedAt: "2026-04-06T16:10:00",
-    status: "Failed",
-    fileSize: "1.1 MB",
-    rowsProcessed: 0,
-    importedBy: "Admin",
-    message: "Column mismatch in role identifier field.",
-    duplicate: false,
-  },
-  {
-    id: "IMP-1006",
-    fileName: "inactive_users_april.csv",
-    reportType: "Inactive Users Report",
-    uploadedAt: "2026-04-06T12:35:00",
-    status: "Completed",
-    fileSize: "640 KB",
-    rowsProcessed: 412,
-    importedBy: "Admin",
-    message: "Import completed with 3 unmatched rows.",
-    duplicate: false,
-  },
-  {
-    id: "IMP-1005",
-    fileName: "last_transaction_april.xlsx",
-    reportType: "User Last Transaction Report",
-    uploadedAt: "2026-04-05T10:20:00",
-    status: "Processing",
-    fileSize: "980 KB",
-    rowsProcessed: 780,
-    importedBy: "Admin",
-    message: "Parsing and normalizing records.",
-    duplicate: false,
-  },
-  {
-    id: "IMP-1004",
-    fileName: "all_roles_master.xlsx",
-    reportType: "All Roles Report",
-    uploadedAt: "2026-04-04T15:05:00",
-    status: "Completed",
-    fileSize: "1.8 MB",
-    rowsProcessed: 1390,
-    importedBy: "Admin",
-    message: "Import completed successfully.",
-    duplicate: true,
-  },
-  {
-    id: "IMP-1003",
-    fileName: "hr_master_april.csv",
-    reportType: "HR Master Data",
-    uploadedAt: "2026-04-03T11:50:00",
-    status: "Queued",
-    fileSize: "3.2 MB",
-    rowsProcessed: 0,
-    importedBy: "Admin",
-    message: "Waiting for processing.",
-    duplicate: false,
-  },
-];
+const EMPTY_STATS = {
+  total: 0,
+  completed: 0,
+  processing: 0,
+  failed: 0,
+};
+
+function normalizeStatus(status) {
+  const value = String(status || "").trim();
+
+  const map = {
+    COMPLETED: "Completed",
+    PROCESSING: "Processing",
+    FAILED: "Failed",
+    QUEUED: "Queued",
+    PENDING: "Queued",
+    Completed: "Completed",
+    Processing: "Processing",
+    Failed: "Failed",
+    Queued: "Queued",
+  };
+
+  return map[value] || value || "Queued";
+}
+
+function normalizeImportRecord(item) {
+  return {
+    id: item?.id || "",
+    importCode: item?.importCode || item?.id || "",
+    fileName: item?.fileName || "-",
+    reportType: item?.reportType || "-",
+    uploadedAt: item?.uploadedAt || null,
+    status: normalizeStatus(item?.status),
+    fileSize: item?.fileSize || "-",
+    rowsProcessed: Number(item?.rowsProcessed || 0),
+    importedBy: item?.importedBy || "-",
+    message: item?.message || "No message available.",
+    duplicate: Boolean(item?.duplicate),
+  };
+}
 
 export default function ImportsHistory() {
-  const [imports, setImports] = useState(() => {
-    const saved = localStorage.getItem("importsHistoryData");
-    return saved ? JSON.parse(saved) : SAMPLE_IMPORTS;
-  });
+  const [imports, setImports] = useState([]);
+  const [stats, setStats] = useState(EMPTY_STATS);
 
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [typeFilter, setTypeFilter] = useState("All");
   const [dateFilter, setDateFilter] = useState("");
+
+  const [selectedImportId, setSelectedImportId] = useState(null);
   const [selectedItem, setSelectedItem] = useState(null);
 
-  useEffect(() => {
-    localStorage.setItem("importsHistoryData", JSON.stringify(imports));
-  }, [imports]);
+  const [loading, setLoading] = useState(true);
+  const [detailsLoading, setDetailsLoading] = useState(false);
+  const [pageError, setPageError] = useState("");
+  const [actionError, setActionError] = useState("");
+
+  const [refreshIndex, setRefreshIndex] = useState(0);
+  const [reprocessId, setReprocessId] = useState(null);
+  const [deleteId, setDeleteId] = useState(null);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setImports((prev) =>
-        prev.map((item) => {
-          if (item.status === "Processing") {
-            const nextRows =
-              item.rowsProcessed + Math.floor(Math.random() * 180 + 80);
-            const completed = nextRows >= 1500;
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm.trim());
+    }, 350);
 
-            return {
-              ...item,
-              rowsProcessed: completed ? 1500 : nextRows,
-              status: completed ? "Completed" : "Processing",
-              message: completed
-                ? "Import completed successfully."
-                : "Parsing and normalizing records.",
-            };
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    const loadImports = async () => {
+      setLoading(true);
+      setPageError("");
+
+      try {
+        const result = await importHistoryApi.list(
+          {
+            search: debouncedSearchTerm,
+            status: statusFilter,
+            reportType: typeFilter,
+            date: dateFilter,
+          },
+          controller.signal,
+        );
+
+        const normalizedItems = (result.items || []).map(normalizeImportRecord);
+        setImports(normalizedItems);
+        setStats({ ...EMPTY_STATS, ...(result.stats || {}) });
+
+        if (selectedImportId) {
+          const stillExists = normalizedItems.some(
+            (item) => item.id === selectedImportId,
+          );
+
+          if (!stillExists) {
+            setSelectedImportId(null);
+            setSelectedItem(null);
           }
-
-          if (item.status === "Queued") {
-            return {
-              ...item,
-              status: "Processing",
-              rowsProcessed: 120,
-              message: "Processing started.",
-            };
-          }
-
-          return item;
-        }),
-      );
-    }, 2500);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  const filteredImports = useMemo(() => {
-    return imports.filter((item) => {
-      const matchesSearch =
-        item.fileName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.reportType.toLowerCase().includes(searchTerm.toLowerCase());
-
-      const matchesStatus =
-        statusFilter === "All" || item.status === statusFilter;
-
-      const matchesType =
-        typeFilter === "All" || item.reportType === typeFilter;
-
-      const matchesDate =
-        !dateFilter ||
-        new Date(item.uploadedAt).toISOString().slice(0, 10) === dateFilter;
-
-      return matchesSearch && matchesStatus && matchesType && matchesDate;
-    });
-  }, [imports, searchTerm, statusFilter, typeFilter, dateFilter]);
-
-  const stats = useMemo(() => {
-    return {
-      total: imports.length,
-      completed: imports.filter((item) => item.status === "Completed").length,
-      processing: imports.filter((item) => item.status === "Processing").length,
-      failed: imports.filter((item) => item.status === "Failed").length,
+        }
+      } catch (error) {
+        if (error.name !== "AbortError") {
+          setPageError(error.message || "Failed to load import history.");
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
+      }
     };
-  }, [imports]);
 
-  const handleDelete = (id) => {
-    setImports((prev) => prev.filter((item) => item.id !== id));
-    if (selectedItem?.id === id) setSelectedItem(null);
+    loadImports();
+
+    return () => controller.abort();
+  }, [
+    debouncedSearchTerm,
+    statusFilter,
+    typeFilter,
+    dateFilter,
+    refreshIndex,
+    selectedImportId,
+  ]);
+
+  useEffect(() => {
+    if (!selectedImportId) return;
+
+    const controller = new AbortController();
+
+    const loadDetails = async () => {
+      setDetailsLoading(true);
+      setActionError("");
+
+      try {
+        const data = await importHistoryApi.getById(
+          selectedImportId,
+          controller.signal,
+        );
+        setSelectedItem(normalizeImportRecord(data));
+      } catch (error) {
+        if (error.name !== "AbortError") {
+          setActionError(error.message || "Failed to load import details.");
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setDetailsLoading(false);
+        }
+      }
+    };
+
+    loadDetails();
+
+    return () => controller.abort();
+  }, [selectedImportId, refreshIndex]);
+
+  const visibleCount = useMemo(() => imports.length, [imports]);
+
+  const handleView = (item) => {
+    setSelectedImportId(item.id);
+    setSelectedItem(normalizeImportRecord(item));
   };
 
-  const handleReprocess = (id) => {
-    setImports((prev) =>
-      prev.map((item) =>
-        item.id === id
-          ? {
-              ...item,
-              status: "Processing",
-              rowsProcessed: 0,
-              message: "Reprocessing started.",
-            }
-          : item,
-      ),
-    );
+  const handleDelete = async (id) => {
+    try {
+      setDeleteId(id);
+      setActionError("");
+
+      await importHistoryApi.remove(id);
+
+      if (selectedImportId === id) {
+        setSelectedImportId(null);
+        setSelectedItem(null);
+      }
+
+      setRefreshIndex((prev) => prev + 1);
+    } catch (error) {
+      setActionError(error.message || "Failed to delete import.");
+    } finally {
+      setDeleteId(null);
+    }
+  };
+
+  const handleReprocess = async (id) => {
+    try {
+      setReprocessId(id);
+      setActionError("");
+
+      await importHistoryApi.reprocess(id);
+      setRefreshIndex((prev) => prev + 1);
+
+      if (selectedImportId === id) {
+        const updated = await importHistoryApi.getById(id);
+        setSelectedItem(normalizeImportRecord(updated));
+      }
+    } catch (error) {
+      setActionError(error.message || "Failed to reprocess import.");
+    } finally {
+      setReprocessId(null);
+    }
   };
 
   const clearFilters = () => {
     setSearchTerm("");
+    setDebouncedSearchTerm("");
     setStatusFilter("All");
     setTypeFilter("All");
     setDateFilter("");
@@ -248,8 +276,8 @@ export default function ImportsHistory() {
           <div>
             <h2 className="text-xl font-semibold text-black">Filter Imports</h2>
             <p className="mt-2 text-sm text-neutral-600">
-              Search by file name, import ID, or report type. Narrow results by
-              status, report category, or upload date.
+              Search by file name, import code, or report type. Narrow results
+              by status, report category, or upload date.
             </p>
           </div>
 
@@ -330,6 +358,12 @@ export default function ImportsHistory() {
         </div>
       </div>
 
+      {(pageError || actionError) && (
+        <div className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {pageError || actionError}
+        </div>
+      )}
+
       <div className="mt-6 grid gap-6 xl:grid-cols-[1.3fr_0.7fr]">
         <div className="rounded-xl border border-neutral-200 bg-white p-6">
           <div className="flex items-center justify-between">
@@ -338,27 +372,33 @@ export default function ImportsHistory() {
                 Import Records
               </h2>
               <p className="mt-2 text-sm text-neutral-600">
-                Review import history in a cleaner card layout.
+                Live data from the backend, aligned with the ImportHistory
+                schema.
               </p>
             </div>
 
             <div className="text-sm text-neutral-500">
-              {filteredImports.length} result
-              {filteredImports.length !== 1 ? "s" : ""}
+              {visibleCount} result{visibleCount !== 1 ? "s" : ""}
             </div>
           </div>
 
-          {filteredImports.length === 0 ? (
+          {loading ? (
+            <div className="mt-5 rounded-xl border border-neutral-200 bg-neutral-50 p-8 text-center text-sm text-neutral-500">
+              Loading import records...
+            </div>
+          ) : imports.length === 0 ? (
             <div className="mt-5 rounded-xl border border-neutral-200 bg-neutral-50 p-8 text-center text-sm text-neutral-500">
               No import records found.
             </div>
           ) : (
             <div className="mt-5 grid gap-4">
-              {filteredImports.map((item) => (
+              {imports.map((item) => (
                 <ImportRecordCard
                   key={item.id}
                   item={item}
-                  onView={() => setSelectedItem(item)}
+                  isReprocessing={reprocessId === item.id}
+                  isDeleting={deleteId === item.id}
+                  onView={() => handleView(item)}
                   onReprocess={() => handleReprocess(item.id)}
                   onDelete={() => handleDelete(item.id)}
                 />
@@ -375,10 +415,15 @@ export default function ImportsHistory() {
             Select an import card to view full metadata and result details.
           </p>
 
-          {selectedItem ? (
+          {detailsLoading ? (
+            <div className="mt-5 rounded-xl border border-neutral-200 bg-neutral-50 p-6 text-sm text-neutral-600">
+              Loading import details...
+            </div>
+          ) : selectedItem ? (
             <div className="mt-5 space-y-4">
               <DetailCard label="File Name" value={selectedItem.fileName} />
-              <DetailCard label="Import ID" value={selectedItem.id} />
+              <DetailCard label="Import Code" value={selectedItem.importCode} />
+              <DetailCard label="Database ID" value={selectedItem.id} />
               <DetailCard label="Report Type" value={selectedItem.reportType} />
               <DetailCard
                 label="Upload Time"
@@ -405,16 +450,23 @@ export default function ImportsHistory() {
                 <button
                   type="button"
                   onClick={() => handleReprocess(selectedItem.id)}
-                  className="inline-flex items-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm font-medium text-black transition hover:bg-neutral-50"
+                  disabled={reprocessId === selectedItem.id}
+                  className="inline-flex items-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm font-medium text-black transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  <RefreshCw size={16} />
+                  <RefreshCw
+                    size={16}
+                    className={
+                      reprocessId === selectedItem.id ? "animate-spin" : ""
+                    }
+                  />
                   Reprocess
                 </button>
 
                 <button
                   type="button"
                   onClick={() => handleDelete(selectedItem.id)}
-                  className="inline-flex items-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm font-medium text-black transition hover:bg-neutral-50"
+                  disabled={deleteId === selectedItem.id}
+                  className="inline-flex items-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm font-medium text-black transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <Trash2 size={16} />
                   Delete
@@ -432,7 +484,14 @@ export default function ImportsHistory() {
   );
 }
 
-function ImportRecordCard({ item, onView, onReprocess, onDelete }) {
+function ImportRecordCard({
+  item,
+  onView,
+  onReprocess,
+  onDelete,
+  isReprocessing,
+  isDeleting,
+}) {
   const tone = getStatusTone(item.status);
 
   return (
@@ -457,8 +516,8 @@ function ImportRecordCard({ item, onView, onReprocess, onDelete }) {
 
             <div className="mt-3 grid gap-2 text-sm text-neutral-600 sm:grid-cols-2">
               <p>
-                <span className="font-medium text-black">Import ID:</span>{" "}
-                {item.id}
+                <span className="font-medium text-black">Import Code:</span>{" "}
+                {item.importCode}
               </p>
               <p>
                 <span className="font-medium text-black">Uploaded:</span>{" "}
@@ -498,9 +557,13 @@ function ImportRecordCard({ item, onView, onReprocess, onDelete }) {
             <button
               type="button"
               onClick={onReprocess}
-              className="inline-flex items-center gap-2 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs font-medium text-black transition hover:bg-neutral-50"
+              disabled={isReprocessing}
+              className="inline-flex items-center gap-2 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs font-medium text-black transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              <RefreshCw size={14} />
+              <RefreshCw
+                size={14}
+                className={isReprocessing ? "animate-spin" : ""}
+              />
               Reprocess
             </button>
           )}
@@ -508,7 +571,8 @@ function ImportRecordCard({ item, onView, onReprocess, onDelete }) {
           <button
             type="button"
             onClick={onDelete}
-            className="inline-flex items-center gap-2 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs font-medium text-black transition hover:bg-neutral-50"
+            disabled={isDeleting}
+            className="inline-flex items-center gap-2 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs font-medium text-black transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <Trash2 size={14} />
             Delete
@@ -525,7 +589,7 @@ function DetailCard({ label, value }) {
       <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">
         {label}
       </p>
-      <p className="mt-2 text-sm text-black">{value}</p>
+      <p className="mt-2 break-words text-sm text-black">{value}</p>
     </div>
   );
 }
@@ -604,6 +668,10 @@ function getStatusTone(status) {
 }
 
 function formatDateTime(dateString) {
+  if (!dateString) return "-";
+
   const date = new Date(dateString);
+  if (Number.isNaN(date.getTime())) return "-";
+
   return date.toLocaleString();
 }
