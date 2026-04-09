@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Upload,
   FileSpreadsheet,
@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import AppLayout from "../layouts/AppLayout";
 import StatusCard from "../components/StatusCard";
+import { fileApi } from "../utils/api";
 
 const REPORT_TYPES = [
   "SaaS Service Usage Metrics Drill Through Report",
@@ -26,15 +27,57 @@ const REPORT_TYPES = [
 const ACCEPTED_EXTENSIONS = [".csv", ".xlsx", ".xls"];
 const MAX_FILE_SIZE_MB = 15;
 
+function normalizeStatus(status) {
+  const map = {
+    PENDING: "Queued",
+    PROCESSING: "Processing",
+    COMPLETED: "Completed",
+    FAILED: "Failed",
+    Queued: "Queued",
+    Processing: "Processing",
+    Completed: "Completed",
+    Failed: "Failed",
+  };
+
+  return map[String(status || "").trim()] || "Queued";
+}
+
+function formatFileSize(bytes) {
+  if (!bytes || bytes < 1024) return `${bytes || 0} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+}
+
+function normalizeQueueItem(item) {
+  return {
+    id: item.id,
+    fileName: item.fileName,
+    size: item.fileSizeBytes ? formatFileSize(item.fileSizeBytes) : "-",
+    reportType: item.reportType,
+    uploadedAt: item.uploadedAt
+      ? new Date(item.uploadedAt).toLocaleString()
+      : "-",
+    status: normalizeStatus(item.status),
+    progress:
+      normalizeStatus(item.status) === "Completed"
+        ? 100
+        : normalizeStatus(item.status) === "Processing"
+          ? 60
+          : 0,
+    error: item.error || "",
+  };
+}
+
 export default function UploadCenter() {
   const inputRef = useRef(null);
 
   const [selectedReportType, setSelectedReportType] = useState("");
   const [dragActive, setDragActive] = useState(false);
-  const [queue, setQueue] = useState(() => {
-    const saved = localStorage.getItem("uploadCenterQueue");
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [queue, setQueue] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [pageError, setPageError] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [busyId, setBusyId] = useState(null);
 
   const stats = useMemo(() => {
     return {
@@ -44,6 +87,24 @@ export default function UploadCenter() {
       failed: queue.filter((item) => item.status === "Failed").length,
     };
   }, [queue]);
+
+  const loadQueue = async () => {
+    setLoading(true);
+    setPageError("");
+
+    try {
+      const data = await fileApi.list();
+      setQueue((data || []).map(normalizeQueueItem));
+    } catch (error) {
+      setPageError(error.message || "Failed to load upload queue.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadQueue();
+  }, []);
 
   const getExtension = (name) => {
     const index = name.lastIndexOf(".");
@@ -68,129 +129,63 @@ export default function UploadCenter() {
     return null;
   };
 
-  const buildQueueItem = (file, reportType) => {
-    const now = new Date();
-    return {
-      id: `${file.name}-${file.size}-${Date.now()}-${Math.random()
-        .toString(36)
-        .slice(2, 8)}`,
-      fileName: file.name,
-      size: formatFileSize(file.size),
-      reportType,
-      uploadedAt: now.toLocaleString(),
-      status: "Queued",
-      progress: 0,
-      error: "",
-    };
-  };
-
-  const handleFiles = (fileList) => {
+  const handleFiles = async (fileList) => {
     const files = Array.from(fileList || []);
     if (!files.length) return;
 
-    const newItems = files.map((file) => {
-      const error = validateFile(file, selectedReportType);
-      const item = buildQueueItem(file, selectedReportType);
+    setPageError("");
+    setUploading(true);
 
-      if (error) {
-        return {
-          ...item,
-          status: "Failed",
-          progress: 0,
-          error,
-        };
-      }
+    try {
+      for (const file of files) {
+        const error = validateFile(file, selectedReportType);
+        if (error) {
+          throw new Error(`${file.name}: ${error}`);
+        }
 
-      return item;
-    });
-
-    const nextQueue = [...newItems, ...queue];
-    persistQueue(nextQueue);
-
-    newItems.forEach((item) => {
-      if (item.status !== "Failed") {
-        simulateUpload(item.id);
-      }
-    });
-  };
-
-  const simulateUpload = (id) => {
-    let progress = 0;
-
-    updateItem(id, {
-      status: "Processing",
-      progress: 8,
-      error: "",
-    });
-
-    const interval = setInterval(() => {
-      progress += Math.floor(Math.random() * 18) + 10;
-
-      if (progress >= 100) {
-        clearInterval(interval);
-        updateItem(id, {
-          status: "Completed",
-          progress: 100,
-          error: "",
+        await fileApi.upload({
+          file,
+          reportType: selectedReportType,
         });
-        return;
       }
 
-      updateItem(id, {
-        status: "Processing",
-        progress,
-      });
-    }, 350);
+      await loadQueue();
+      inputRef.current.value = "";
+    } catch (error) {
+      setPageError(error.message || "Upload failed.");
+    } finally {
+      setUploading(false);
+    }
   };
 
-  const persistQueue = (next) => {
-    localStorage.setItem("uploadCenterQueue", JSON.stringify(next));
-    setQueue(next);
+  const removeItem = async (id) => {
+    try {
+      setBusyId(id);
+      setPageError("");
+      await fileApi.remove(id);
+      await loadQueue();
+    } catch (error) {
+      setPageError(error.message || "Failed to remove file.");
+    } finally {
+      setBusyId(null);
+    }
   };
 
-  const updateItem = (id, patch) => {
-    setQueue((prev) => {
-      const next = prev.map((item) =>
-        item.id === id ? { ...item, ...patch } : item,
-      );
-      localStorage.setItem("uploadCenterQueue", JSON.stringify(next));
-      return next;
-    });
-  };
-
-  const removeItem = (id) => {
-    setQueue((prev) => {
-      const next = prev.filter((item) => item.id !== id);
-      localStorage.setItem("uploadCenterQueue", JSON.stringify(next));
-      return next;
-    });
+  const retryItem = async (id) => {
+    try {
+      setBusyId(id);
+      setPageError("");
+      await fileApi.retry(id);
+      await loadQueue();
+    } catch (error) {
+      setPageError(error.message || "Failed to retry file.");
+    } finally {
+      setBusyId(null);
+    }
   };
 
   const clearCompleted = () => {
-    setQueue((prev) => {
-      const next = prev.filter((item) => item.status !== "Completed");
-      localStorage.setItem("uploadCenterQueue", JSON.stringify(next));
-      return next;
-    });
-  };
-
-  const retryItem = (id) => {
-    const item = queue.find((entry) => entry.id === id);
-    if (!item) return;
-
-    if (!selectedReportType) {
-      setSelectedReportType(item.reportType);
-    }
-
-    updateItem(id, {
-      status: "Queued",
-      progress: 0,
-      error: "",
-    });
-
-    setTimeout(() => {
-      simulateUpload(id);
-    }, 200);
+    setQueue((prev) => prev.filter((item) => item.status !== "Completed"));
   };
 
   const onDrop = (e) => {
@@ -229,6 +224,12 @@ export default function UploadCenter() {
           status="error"
         />
       </div>
+
+      {pageError && (
+        <div className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {pageError}
+        </div>
+      )}
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
         <div className="rounded-xl border border-neutral-200 bg-white p-6">
@@ -295,10 +296,11 @@ export default function UploadCenter() {
 
               <button
                 type="button"
+                disabled={uploading}
                 onClick={() => inputRef.current?.click()}
-                className="mt-5 rounded-xl border border-neutral-200 bg-white px-5 py-3 text-sm font-medium text-black transition hover:bg-neutral-50"
+                className="mt-5 rounded-xl border border-neutral-200 bg-white px-5 py-3 text-sm font-medium text-black transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                Choose Files
+                {uploading ? "Uploading..." : "Choose Files"}
               </button>
 
               <input
@@ -309,18 +311,6 @@ export default function UploadCenter() {
                 className="hidden"
                 onChange={(e) => handleFiles(e.target.files)}
               />
-            </div>
-
-            <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-4">
-              <h3 className="text-sm font-semibold text-black">Upload Rules</h3>
-              <div className="mt-3 space-y-2 text-sm text-neutral-600">
-                <p>• Select the correct report category before uploading.</p>
-                <p>• Only CSV, XLSX, and XLS files are accepted.</p>
-                <p>
-                  • Files should use clean column headers whenever possible.
-                </p>
-                <p>• Upload one report type per file for clean processing.</p>
-              </div>
             </div>
           </div>
         </div>
@@ -370,7 +360,11 @@ export default function UploadCenter() {
           </button>
         </div>
 
-        {queue.length === 0 ? (
+        {loading ? (
+          <div className="mt-5 rounded-xl border border-neutral-200 bg-neutral-50 p-8 text-center text-sm text-neutral-500">
+            Loading upload queue...
+          </div>
+        ) : queue.length === 0 ? (
           <div className="mt-5 rounded-xl border border-neutral-200 bg-neutral-50 p-8 text-center text-sm text-neutral-500">
             No files uploaded yet.
           </div>
@@ -380,6 +374,7 @@ export default function UploadCenter() {
               <UploadQueueCard
                 key={item.id}
                 item={item}
+                busy={busyId === item.id}
                 onRetry={() => retryItem(item.id)}
                 onRemove={() => removeItem(item.id)}
               />
@@ -391,7 +386,7 @@ export default function UploadCenter() {
   );
 }
 
-function UploadQueueCard({ item, onRetry, onRemove }) {
+function UploadQueueCard({ item, onRetry, onRemove, busy }) {
   const tone = getStatusTone(item.status);
 
   return (
@@ -453,18 +448,20 @@ function UploadQueueCard({ item, onRetry, onRemove }) {
           {item.status === "Failed" && (
             <button
               type="button"
+              disabled={busy}
               onClick={onRetry}
-              className="inline-flex items-center gap-2 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs font-medium text-black transition hover:bg-neutral-50"
+              className="inline-flex items-center gap-2 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs font-medium text-black transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              <RefreshCw size={14} />
+              <RefreshCw size={14} className={busy ? "animate-spin" : ""} />
               Retry
             </button>
           )}
 
           <button
             type="button"
+            disabled={busy}
             onClick={onRemove}
-            className="inline-flex items-center gap-2 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs font-medium text-black transition hover:bg-neutral-50"
+            className="inline-flex items-center gap-2 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs font-medium text-black transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <Trash2 size={14} />
             Remove
@@ -553,10 +550,4 @@ function getStatusMessage(status) {
   if (status === "Processing") return "File is currently being processed.";
   if (status === "Queued") return "File is waiting for processing.";
   return "Upload status unavailable.";
-}
-
-function formatFileSize(bytes) {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 }

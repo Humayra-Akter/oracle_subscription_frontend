@@ -114,3 +114,43 @@ export const importHistoryApi = {
     return response?.data;
   },
 };
+
+export const fileApi = {
+  list: async (signal) => {
+    const response = await apiRequest("/files", {
+      method: "GET",
+      signal,
+    });
+
+    return response?.data || [];
+  },
+
+  upload: async ({ file, reportType }) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("reportType", reportType);
+
+    const response = await apiRequest("/files/upload", {
+      method: "POST",
+      body: formData,
+    });
+
+    return response?.data;
+  },
+
+  retry: async (id) => {
+    const response = await apiRequest(`/files/${id}/retry`, {
+      method: "POST",
+    });
+
+    return response?.data;
+  },
+
+  remove: async (id) => {
+    const response = await apiRequest(`/files/${id}`, {
+      method: "DELETE",
+    });
+
+    return response?.data;
+  },
+};
