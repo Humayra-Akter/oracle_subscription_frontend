@@ -153,7 +153,7 @@ Reports/export module
 Dashboard module
 9. Recommended tech stack
 
-Since you are comfortable with React and Node.js, use this:
+
 
 Frontend
 Next.js
@@ -192,7 +192,7 @@ Vercel for frontend
 Railway / Render for backend
 Neon / Railway Postgres
 Upstash Redis
-10. Database tables you will likely need
+10. Database tables likely need
 Core tables
 users
 roles

@@ -154,3 +154,29 @@ export const fileApi = {
     return response?.data;
   },
 };
+
+export const usersAnalysisApi = {
+  list: async (filters = {}, signal) => {
+    const query = toQueryString(filters);
+    const response = await apiRequest(`/users-analysis${query}`, {
+      method: "GET",
+      signal,
+    });
+
+    return (
+      response?.data || {
+        items: [],
+        stats: {},
+      }
+    );
+  },
+
+  getById: async (id, signal) => {
+    const response = await apiRequest(`/users-analysis/${id}`, {
+      method: "GET",
+      signal,
+    });
+
+    return response?.data;
+  },
+};
