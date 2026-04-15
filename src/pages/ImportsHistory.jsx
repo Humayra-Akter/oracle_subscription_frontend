@@ -1,18 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import {
-  Search,
-  Filter,
-  RefreshCw,
-  Trash2,
-  Eye,
-  FileText,
-  CheckCircle2,
-  AlertCircle,
-  Clock3,
-  XCircle,
-} from "lucide-react";
+import { Search, Eye, RefreshCw, Trash2 } from "lucide-react";
 import AppLayout from "../layouts/AppLayout";
 import StatusCard from "../components/StatusCard";
+import TablePagination from "../components/TablePagination";
+import DataModal from "../components/DataModal";
 import { importHistoryApi } from "../utils/api";
 
 const REPORT_TYPES = [
@@ -27,19 +18,10 @@ const REPORT_TYPES = [
   "HR Master Data",
 ];
 
-const STATUS_OPTIONS = ["All", "Completed", "Processing", "Queued", "Failed"];
-
-const EMPTY_STATS = {
-  total: 0,
-  completed: 0,
-  processing: 0,
-  failed: 0,
-  queued: 0,
-};
+const PAGE_SIZE = 10;
 
 function normalizeStatus(status) {
   const value = String(status || "").trim();
-
   const map = {
     COMPLETED: "Completed",
     PROCESSING: "Processing",
@@ -51,14 +33,13 @@ function normalizeStatus(status) {
     Failed: "Failed",
     Queued: "Queued",
   };
-
-  return map[value] || value || "Queued";
+  return map[value] || "Queued";
 }
 
 function normalizeImportRecord(item) {
   return {
     id: item?.id || "",
-    importCode: item?.importCode || item?.id || "",
+    importCode: item?.importCode || "",
     fileName: item?.fileName || "-",
     reportType: item?.reportType || "-",
     createdAt: item?.createdAt || null,
@@ -66,180 +47,131 @@ function normalizeImportRecord(item) {
     fileSizeLabel: item?.fileSizeLabel || "-",
     rowsProcessed: Number(item?.rowsProcessed || 0),
     importedBy: item?.importedBy || "-",
-    message: item?.message || "No message available.",
+    message: item?.message || "-",
     duplicate: Boolean(item?.duplicate),
   };
 }
 
+function formatDateTime(dateString) {
+  if (!dateString) return "-";
+  const date = new Date(dateString);
+  if (Number.isNaN(date.getTime())) return "-";
+  return date.toLocaleString();
+}
+
+function StatusBadge({ status }) {
+  const styles = {
+    Queued: "bg-yellow-50 text-yellow-700 border-yellow-200",
+    Processing: "bg-blue-50 text-blue-700 border-blue-200",
+    Completed: "bg-green-50 text-green-700 border-green-200",
+    Failed: "bg-red-50 text-red-700 border-red-200",
+  };
+
+  return (
+    <span
+      className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${
+        styles[status] || "bg-neutral-50 text-neutral-700 border-neutral-200"
+      }`}
+    >
+      {status}
+    </span>
+  );
+}
+
 export default function ImportsHistory() {
   const [imports, setImports] = useState([]);
-  const [stats, setStats] = useState(EMPTY_STATS);
+  const [stats, setStats] = useState({
+    total: 0,
+    completed: 0,
+    processing: 0,
+    failed: 0,
+    queued: 0,
+  });
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [typeFilter, setTypeFilter] = useState("All");
   const [dateFilter, setDateFilter] = useState("");
+  const [page, setPage] = useState(1);
 
-  const [selectedImportId, setSelectedImportId] = useState(null);
-  const [selectedItem, setSelectedItem] = useState(null);
+  const [selectedRow, setSelectedRow] = useState(null);
 
   const [loading, setLoading] = useState(true);
-  const [detailsLoading, setDetailsLoading] = useState(false);
   const [pageError, setPageError] = useState("");
-  const [actionError, setActionError] = useState("");
+  const [actionBusyId, setActionBusyId] = useState(null);
 
-  const [refreshIndex, setRefreshIndex] = useState(0);
-  const [reprocessId, setReprocessId] = useState(null);
-  const [deleteId, setDeleteId] = useState(null);
+  const loadImports = async () => {
+    setLoading(true);
+    setPageError("");
+
+    try {
+      const result = await importHistoryApi.list({
+        search: searchTerm,
+        status: statusFilter,
+        reportType: typeFilter,
+        date: dateFilter,
+      });
+
+      setImports((result.items || []).map(normalizeImportRecord));
+      setStats({
+        total: 0,
+        completed: 0,
+        processing: 0,
+        failed: 0,
+        queued: 0,
+        ...(result.stats || {}),
+      });
+    } catch (error) {
+      setPageError(error.message || "Failed to load import history.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm.trim());
-    }, 350);
-
-    return () => clearTimeout(timer);
-  }, [searchTerm]);
-
-  useEffect(() => {
-    const controller = new AbortController();
-
-    const loadImports = async () => {
-      setLoading(true);
-      setPageError("");
-
-      try {
-        const result = await importHistoryApi.list(
-          {
-            search: debouncedSearchTerm,
-            status: statusFilter,
-            reportType: typeFilter,
-            date: dateFilter,
-          },
-          controller.signal,
-        );
-
-        const normalizedItems = (result.items || []).map(normalizeImportRecord);
-        setImports(normalizedItems);
-        setStats({ ...EMPTY_STATS, ...(result.stats || {}) });
-
-        if (selectedImportId) {
-          const stillExists = normalizedItems.some(
-            (item) => item.id === selectedImportId,
-          );
-
-          if (!stillExists) {
-            setSelectedImportId(null);
-            setSelectedItem(null);
-          }
-        }
-      } catch (error) {
-        if (error.name !== "AbortError") {
-          setPageError(error.message || "Failed to load import history.");
-        }
-      } finally {
-        if (!controller.signal.aborted) {
-          setLoading(false);
-        }
-      }
-    };
-
     loadImports();
+  }, [searchTerm, statusFilter, typeFilter, dateFilter]);
 
-    return () => controller.abort();
-  }, [
-    debouncedSearchTerm,
-    statusFilter,
-    typeFilter,
-    dateFilter,
-    refreshIndex,
-    selectedImportId,
-  ]);
+  const totalPages = Math.ceil(imports.length / PAGE_SIZE) || 1;
+
+  const paginatedItems = useMemo(() => {
+    const start = (page - 1) * PAGE_SIZE;
+    return imports.slice(start, start + PAGE_SIZE);
+  }, [imports, page]);
 
   useEffect(() => {
-    if (!selectedImportId) return;
+    if (page > totalPages) setPage(1);
+  }, [page, totalPages]);
 
-    const controller = new AbortController();
-
-    const loadDetails = async () => {
-      setDetailsLoading(true);
-      setActionError("");
-
-      try {
-        const data = await importHistoryApi.getById(
-          selectedImportId,
-          controller.signal,
-        );
-        setSelectedItem(normalizeImportRecord(data));
-      } catch (error) {
-        if (error.name !== "AbortError") {
-          setActionError(error.message || "Failed to load import details.");
-        }
-      } finally {
-        if (!controller.signal.aborted) {
-          setDetailsLoading(false);
-        }
-      }
-    };
-
-    loadDetails();
-
-    return () => controller.abort();
-  }, [selectedImportId, refreshIndex]);
-
-  const visibleCount = useMemo(() => imports.length, [imports]);
-
-  const handleView = (item) => {
-    setSelectedImportId(item.id);
-    setSelectedItem(normalizeImportRecord(item));
+  const handleReprocess = async (id) => {
+    try {
+      setActionBusyId(id);
+      await importHistoryApi.reprocess(id);
+      await loadImports();
+    } catch (error) {
+      setPageError(error.message || "Failed to reprocess import.");
+    } finally {
+      setActionBusyId(null);
+    }
   };
 
   const handleDelete = async (id) => {
     try {
-      setDeleteId(id);
-      setActionError("");
-
+      setActionBusyId(id);
       await importHistoryApi.remove(id);
-
-      if (selectedImportId === id) {
-        setSelectedImportId(null);
-        setSelectedItem(null);
-      }
-
-      setRefreshIndex((prev) => prev + 1);
+      await loadImports();
+      if (selectedRow?.id === id) setSelectedRow(null);
     } catch (error) {
-      setActionError(error.message || "Failed to delete import.");
+      setPageError(error.message || "Failed to delete import.");
     } finally {
-      setDeleteId(null);
+      setActionBusyId(null);
     }
-  };
-
-  const handleReprocess = async (id) => {
-    try {
-      setReprocessId(id);
-      setActionError("");
-
-      await importHistoryApi.reprocess(id);
-      setRefreshIndex((prev) => prev + 1);
-    } catch (error) {
-      setActionError(error.message || "Failed to reprocess import.");
-    } finally {
-      setReprocessId(null);
-    }
-  };
-
-  const clearFilters = () => {
-    setSearchTerm("");
-    setDebouncedSearchTerm("");
-    setStatusFilter("All");
-    setTypeFilter("All");
-    setDateFilter("");
   };
 
   return (
     <AppLayout
       title="Imports History"
-      subtitle="Review uploaded Oracle report files, filter processing results, reprocess failed imports, and manage import records."
+      subtitle="Review import results with table controls, search, filters, pagination, and row actions."
     >
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
         <StatusCard
@@ -250,13 +182,13 @@ export default function ImportsHistory() {
         <StatusCard
           title="Completed"
           value={stats.completed}
-          subtitle="Processed successfully"
+          subtitle="Processed"
           status="success"
         />
         <StatusCard
           title="Processing"
           value={stats.processing}
-          subtitle="Currently running"
+          subtitle="In progress"
           status="processing"
         />
         <StatusCard
@@ -267,409 +199,227 @@ export default function ImportsHistory() {
         />
       </div>
 
-      <div className="mt-6 rounded-xl border border-neutral-200 bg-white p-6">
-        <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
-          <div>
-            <h2 className="text-xl font-semibold text-black">Filter Imports</h2>
-            <p className="mt-2 text-sm text-neutral-600">
-              Search by file name, import code, or report type. Narrow results
-              by status, report category, or import date.
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={clearFilters}
-            className="rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm font-medium text-black transition hover:bg-neutral-50"
-          >
-            Clear Filters
-          </button>
-        </div>
-
-        <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <div>
-            <label className="mb-2 block text-sm font-medium text-black">
-              Search
-            </label>
-            <div className="flex items-center gap-3 rounded-xl border border-neutral-200 bg-white px-4 py-3">
-              <Search size={18} className="text-neutral-500" />
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search imports"
-                className="w-full bg-transparent text-sm text-black outline-none placeholder:text-neutral-400"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-medium text-black">
-              Status
-            </label>
-            <div className="flex items-center gap-3 rounded-xl border border-neutral-200 bg-white px-4 py-3">
-              <Filter size={18} className="text-neutral-500" />
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full bg-transparent text-sm text-black outline-none"
-              >
-                {STATUS_OPTIONS.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-medium text-black">
-              Report Type
-            </label>
-            <select
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
-              className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm text-black outline-none"
-            >
-              {REPORT_TYPES.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-medium text-black">
-              Import Date
-            </label>
-            <input
-              type="date"
-              value={dateFilter}
-              onChange={(e) => setDateFilter(e.target.value)}
-              className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm text-black outline-none"
-            />
-          </div>
-        </div>
-      </div>
-
-      {(pageError || actionError) && (
+      {pageError && (
         <div className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          {pageError || actionError}
+          {pageError}
         </div>
       )}
 
-      <div className="mt-6 grid gap-6 xl:grid-cols-[1.3fr_0.7fr]">
-        <div className="rounded-xl border border-neutral-200 bg-white p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-semibold text-black">
-                Import Records
-              </h2>
-              <p className="mt-2 text-sm text-neutral-600">
-                Live data from the backend import history table.
-              </p>
+      <div className="mt-6 rounded-xl border border-neutral-200 bg-white">
+        <div className="border-b border-neutral-200 p-6">
+          <div className="grid gap-4 xl:grid-cols-[1fr_220px_220px_180px]">
+            <div className="flex items-center gap-3 rounded-xl border border-neutral-200 px-4 py-3">
+              <Search size={18} className="text-neutral-500" />
+              <input
+                type="text"
+                placeholder="Search file name, code, report type"
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setPage(1);
+                }}
+                className="w-full bg-transparent text-sm outline-none"
+              />
             </div>
 
-            <div className="text-sm text-neutral-500">
-              {visibleCount} result{visibleCount !== 1 ? "s" : ""}
-            </div>
-          </div>
+            <select
+              value={statusFilter}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setPage(1);
+              }}
+              className="rounded-xl border border-neutral-200 px-4 py-3 text-sm"
+            >
+              <option value="All">All Statuses</option>
+              <option value="Completed">Completed</option>
+              <option value="Processing">Processing</option>
+              <option value="Queued">Queued</option>
+              <option value="Failed">Failed</option>
+            </select>
 
-          {loading ? (
-            <div className="mt-5 rounded-xl border border-neutral-200 bg-neutral-50 p-8 text-center text-sm text-neutral-500">
-              Loading import records...
-            </div>
-          ) : imports.length === 0 ? (
-            <div className="mt-5 rounded-xl border border-neutral-200 bg-neutral-50 p-8 text-center text-sm text-neutral-500">
-              No import records found.
-            </div>
-          ) : (
-            <div className="mt-5 grid gap-4">
-              {imports.map((item) => (
-                <ImportRecordCard
-                  key={item.id}
-                  item={item}
-                  isReprocessing={reprocessId === item.id}
-                  isDeleting={deleteId === item.id}
-                  onView={() => handleView(item)}
-                  onReprocess={() => handleReprocess(item.id)}
-                  onDelete={() => handleDelete(item.id)}
-                />
+            <select
+              value={typeFilter}
+              onChange={(e) => {
+                setTypeFilter(e.target.value);
+                setPage(1);
+              }}
+              className="rounded-xl border border-neutral-200 px-4 py-3 text-sm"
+            >
+              {REPORT_TYPES.map((type) => (
+                <option key={type} value={type}>
+                  {type}
+                </option>
               ))}
-            </div>
-          )}
+            </select>
+
+            <input
+              type="date"
+              value={dateFilter}
+              onChange={(e) => {
+                setDateFilter(e.target.value);
+                setPage(1);
+              }}
+              className="rounded-xl border border-neutral-200 px-4 py-3 text-sm"
+            />
+          </div>
         </div>
 
-        <div className="rounded-xl border border-neutral-200 bg-white p-6">
-          <h2 className="text-xl font-semibold text-black">
-            Processing Result
-          </h2>
-          <p className="mt-2 text-sm text-neutral-600">
-            Select an import card to view full metadata and result details.
-          </p>
+        <div className="overflow-x-auto">
+          <table className="min-w-full text-left text-sm">
+            <thead className="border-b border-neutral-200 bg-neutral-50">
+              <tr>
+                <th className="px-6 py-4 font-medium text-neutral-600">
+                  Import Code
+                </th>
+                <th className="px-6 py-4 font-medium text-neutral-600">
+                  File Name
+                </th>
+                <th className="px-6 py-4 font-medium text-neutral-600">
+                  Report Type
+                </th>
+                <th className="px-6 py-4 font-medium text-neutral-600">
+                  Status
+                </th>
+                <th className="px-6 py-4 font-medium text-neutral-600">Rows</th>
+                <th className="px-6 py-4 font-medium text-neutral-600">
+                  Created
+                </th>
+                <th className="px-6 py-4 font-medium text-neutral-600">
+                  Actions
+                </th>
+              </tr>
+            </thead>
 
-          {detailsLoading ? (
-            <div className="mt-5 rounded-xl border border-neutral-200 bg-neutral-50 p-6 text-sm text-neutral-600">
-              Loading import details...
-            </div>
-          ) : selectedItem ? (
-            <div className="mt-5 space-y-4">
-              <DetailCard label="File Name" value={selectedItem.fileName} />
-              <DetailCard label="Import Code" value={selectedItem.importCode} />
-              <DetailCard label="Database ID" value={selectedItem.id} />
-              <DetailCard label="Report Type" value={selectedItem.reportType} />
-              <DetailCard
-                label="Created Time"
-                value={formatDateTime(selectedItem.createdAt)}
-              />
-              <DetailCard label="Status" value={selectedItem.status} />
-              <DetailCard
-                label="File Size"
-                value={selectedItem.fileSizeLabel}
-              />
-              <DetailCard
-                label="Rows Processed"
-                value={selectedItem.rowsProcessed.toLocaleString()}
-              />
-              <DetailCard label="Imported By" value={selectedItem.importedBy} />
-              <DetailCard label="Message" value={selectedItem.message} />
-              <DetailCard
-                label="Duplicate Check"
-                value={
-                  selectedItem.duplicate
-                    ? "Duplicate detected"
-                    : "No duplicate detected"
-                }
-              />
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td
+                    colSpan="7"
+                    className="px-6 py-10 text-center text-neutral-500"
+                  >
+                    Loading import records...
+                  </td>
+                </tr>
+              ) : paginatedItems.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan="7"
+                    className="px-6 py-10 text-center text-neutral-500"
+                  >
+                    No import records found.
+                  </td>
+                </tr>
+              ) : (
+                paginatedItems.map((item) => (
+                  <tr key={item.id} className="border-b border-neutral-100">
+                    <td className="px-6 py-4 font-medium text-black">
+                      {item.importCode}
+                    </td>
+                    <td className="px-6 py-4 text-neutral-700">
+                      {item.fileName}
+                    </td>
+                    <td className="px-6 py-4 text-neutral-700">
+                      {item.reportType}
+                    </td>
+                    <td className="px-6 py-4">
+                      <StatusBadge status={item.status} />
+                    </td>
+                    <td className="px-6 py-4 text-neutral-700">
+                      {item.rowsProcessed}
+                    </td>
+                    <td className="px-6 py-4 text-neutral-700">
+                      {formatDateTime(item.createdAt)}
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedRow(item)}
+                          className="inline-flex items-center gap-2 rounded-lg border border-neutral-200 px-3 py-2 text-xs font-medium"
+                        >
+                          <Eye size={14} />
+                          View
+                        </button>
 
-              <div className="flex gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => handleReprocess(selectedItem.id)}
-                  disabled={reprocessId === selectedItem.id}
-                  className="inline-flex items-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm font-medium text-black transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  <RefreshCw
-                    size={16}
-                    className={
-                      reprocessId === selectedItem.id ? "animate-spin" : ""
-                    }
-                  />
-                  Reprocess
-                </button>
+                        <button
+                          type="button"
+                          disabled={actionBusyId === item.id}
+                          onClick={() => handleReprocess(item.id)}
+                          className="inline-flex items-center gap-2 rounded-lg border border-neutral-200 px-3 py-2 text-xs font-medium"
+                        >
+                          <RefreshCw size={14} />
+                          Reprocess
+                        </button>
 
-                <button
-                  type="button"
-                  onClick={() => handleDelete(selectedItem.id)}
-                  disabled={deleteId === selectedItem.id}
-                  className="inline-flex items-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm font-medium text-black transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  <Trash2 size={16} />
-                  Delete
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="mt-5 rounded-xl border border-neutral-200 bg-neutral-50 p-6 text-sm text-neutral-600">
-              No import selected yet.
-            </div>
-          )}
+                        <button
+                          type="button"
+                          disabled={actionBusyId === item.id}
+                          onClick={() => handleDelete(item.id)}
+                          className="inline-flex items-center gap-2 rounded-lg border border-neutral-200 px-3 py-2 text-xs font-medium"
+                        >
+                          <Trash2 size={14} />
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
+
+        <TablePagination
+          page={page}
+          totalPages={totalPages}
+          totalItems={imports.length}
+          pageSize={PAGE_SIZE}
+          onPageChange={setPage}
+        />
       </div>
+
+      <DataModal
+        open={!!selectedRow}
+        title="Import Details"
+        onClose={() => setSelectedRow(null)}
+      >
+        {selectedRow && (
+          <div className="grid gap-4 md:grid-cols-2">
+            <DetailItem label="Import Code" value={selectedRow.importCode} />
+            <DetailItem label="File Name" value={selectedRow.fileName} />
+            <DetailItem label="Report Type" value={selectedRow.reportType} />
+            <DetailItem label="Status" value={selectedRow.status} />
+            <DetailItem
+              label="Created"
+              value={formatDateTime(selectedRow.createdAt)}
+            />
+            <DetailItem label="File Size" value={selectedRow.fileSizeLabel} />
+            <DetailItem
+              label="Rows Processed"
+              value={selectedRow.rowsProcessed}
+            />
+            <DetailItem label="Imported By" value={selectedRow.importedBy} />
+            <div className="md:col-span-2">
+              <DetailItem label="Message" value={selectedRow.message} />
+            </div>
+            <DetailItem
+              label="Duplicate"
+              value={selectedRow.duplicate ? "Yes" : "No"}
+            />
+          </div>
+        )}
+      </DataModal>
     </AppLayout>
   );
 }
 
-function ImportRecordCard({
-  item,
-  onView,
-  onReprocess,
-  onDelete,
-  isReprocessing,
-  isDeleting,
-}) {
-  const tone = getStatusTone(item.status);
-
+function DetailItem({ label, value }) {
   return (
-    <div className={`rounded-xl border p-5 ${tone.wrapper}`}>
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div className="flex min-w-0 gap-4">
-          <div
-            className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border ${tone.iconBox}`}
-          >
-            <FileText size={20} />
-          </div>
-
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <h3 className="truncate text-base font-semibold text-black">
-                {item.fileName}
-              </h3>
-              <StatusBadge status={item.status} />
-            </div>
-
-            <p className="mt-1 text-sm text-neutral-600">{item.reportType}</p>
-
-            <div className="mt-3 grid gap-2 text-sm text-neutral-600 sm:grid-cols-2">
-              <p>
-                <span className="font-medium text-black">Import Code:</span>{" "}
-                {item.importCode}
-              </p>
-              <p>
-                <span className="font-medium text-black">Created:</span>{" "}
-                {formatDateTime(item.createdAt)}
-              </p>
-              <p>
-                <span className="font-medium text-black">File Size:</span>{" "}
-                {item.fileSizeLabel}
-              </p>
-              <p>
-                <span className="font-medium text-black">Rows:</span>{" "}
-                {item.rowsProcessed.toLocaleString()}
-              </p>
-            </div>
-
-            <p className={`mt-3 text-sm ${tone.message}`}>{item.message}</p>
-
-            {item.duplicate && (
-              <p className="mt-2 text-sm text-neutral-600">
-                Duplicate file/report detected
-              </p>
-            )}
-          </div>
-        </div>
-
-        <div className="flex shrink-0 flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={onView}
-            className="inline-flex items-center gap-2 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs font-medium text-black transition hover:bg-neutral-50"
-          >
-            <Eye size={14} />
-            View
-          </button>
-
-          {(item.status === "Failed" || item.status === "Completed") && (
-            <button
-              type="button"
-              onClick={onReprocess}
-              disabled={isReprocessing}
-              className="inline-flex items-center gap-2 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs font-medium text-black transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <RefreshCw
-                size={14}
-                className={isReprocessing ? "animate-spin" : ""}
-              />
-              Reprocess
-            </button>
-          )}
-
-          <button
-            type="button"
-            onClick={onDelete}
-            disabled={isDeleting}
-            className="inline-flex items-center gap-2 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs font-medium text-black transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <Trash2 size={14} />
-            Delete
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function DetailCard({ label, value }) {
-  return (
-    <div className="rounded-xl border border-neutral-200 bg-white p-4">
+    <div className="rounded-xl border border-neutral-200 p-4">
       <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">
         {label}
       </p>
       <p className="mt-2 break-words text-sm text-black">{value}</p>
     </div>
   );
-}
-
-function StatusBadge({ status }) {
-  const config = {
-    Queued: {
-      icon: <Clock3 size={14} />,
-      text: "Queued",
-      className: "border-yellow-200 bg-yellow-50 text-yellow-700",
-    },
-    Processing: {
-      icon: <RefreshCw size={14} className="animate-spin" />,
-      text: "Processing",
-      className: "border-yellow-200 bg-yellow-50 text-yellow-700",
-    },
-    Completed: {
-      icon: <CheckCircle2 size={14} />,
-      text: "Completed",
-      className: "border-green-200 bg-green-50 text-green-700",
-    },
-    Failed: {
-      icon: <AlertCircle size={14} />,
-      text: "Failed",
-      className: "border-red-200 bg-red-50 text-red-700",
-    },
-    Deleted: {
-      icon: <XCircle size={14} />,
-      text: "Deleted",
-      className: "border-neutral-200 bg-neutral-50 text-neutral-700",
-    },
-  };
-
-  const current = config[status] || config.Queued;
-
-  return (
-    <span
-      className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium ${current.className}`}
-    >
-      {current.icon}
-      {current.text}
-    </span>
-  );
-}
-
-function getStatusTone(status) {
-  if (status === "Completed") {
-    return {
-      wrapper: "border-green-200 bg-green-50",
-      iconBox: "border-green-200 bg-white text-green-700",
-      message: "text-green-700",
-    };
-  }
-
-  if (status === "Failed") {
-    return {
-      wrapper: "border-red-200 bg-red-50",
-      iconBox: "border-red-200 bg-white text-red-700",
-      message: "text-red-700",
-    };
-  }
-
-  if (status === "Processing" || status === "Queued") {
-    return {
-      wrapper: "border-yellow-200 bg-yellow-50",
-      iconBox: "border-yellow-200 bg-white text-yellow-700",
-      message: "text-yellow-700",
-    };
-  }
-
-  return {
-    wrapper: "border-neutral-200 bg-white",
-    iconBox: "border-neutral-200 bg-neutral-50 text-black",
-    message: "text-neutral-600",
-  };
-}
-
-function formatDateTime(dateString) {
-  if (!dateString) return "-";
-
-  const date = new Date(dateString);
-  if (Number.isNaN(date.getTime())) return "-";
-
-  return date.toLocaleString();
 }
