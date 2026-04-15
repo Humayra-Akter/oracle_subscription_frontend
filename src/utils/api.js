@@ -42,7 +42,7 @@ export const apiRequest = async (endpoint, options = {}) => {
   return data;
 };
 
-const toQueryString = (params = {}) => {
+export const toQueryString = (params = {}) => {
   const searchParams = new URLSearchParams();
 
   Object.entries(params).forEach(([key, value]) => {
@@ -55,6 +55,7 @@ const toQueryString = (params = {}) => {
   return query ? `?${query}` : "";
 };
 
+// -------- Auth ------------
 export const authApi = {
   register: async ({ name, email, password }) => {
     return apiRequest("/auth/register", {
@@ -78,6 +79,7 @@ export const authApi = {
   },
 };
 
+// -------- Import History -----------
 export const importHistoryApi = {
   list: async (filters = {}, signal) => {
     const query = toQueryString(filters);
@@ -115,6 +117,7 @@ export const importHistoryApi = {
   },
 };
 
+// -------- Files -----------
 export const fileApi = {
   list: async (signal) => {
     const response = await apiRequest("/files", {
@@ -155,6 +158,7 @@ export const fileApi = {
   },
 };
 
+// -------- Users Analysis -----------
 export const usersAnalysisApi = {
   list: async (filters = {}, signal) => {
     const query = toQueryString(filters);

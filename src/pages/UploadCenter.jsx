@@ -150,7 +150,10 @@ export default function UploadCenter() {
       }
 
       await loadQueue();
-      inputRef.current.value = "";
+
+      if (inputRef.current) {
+        inputRef.current.value = "";
+      }
     } catch (error) {
       setPageError(error.message || "Upload failed.");
     } finally {

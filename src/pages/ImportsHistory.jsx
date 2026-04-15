@@ -34,6 +34,7 @@ const EMPTY_STATS = {
   completed: 0,
   processing: 0,
   failed: 0,
+  queued: 0,
 };
 
 function normalizeStatus(status) {
@@ -60,9 +61,9 @@ function normalizeImportRecord(item) {
     importCode: item?.importCode || item?.id || "",
     fileName: item?.fileName || "-",
     reportType: item?.reportType || "-",
-    uploadedAt: item?.uploadedAt || null,
+    createdAt: item?.createdAt || null,
     status: normalizeStatus(item?.status),
-    fileSize: item?.fileSize || "-",
+    fileSizeLabel: item?.fileSizeLabel || "-",
     rowsProcessed: Number(item?.rowsProcessed || 0),
     importedBy: item?.importedBy || "-",
     message: item?.message || "No message available.",
@@ -220,11 +221,6 @@ export default function ImportsHistory() {
 
       await importHistoryApi.reprocess(id);
       setRefreshIndex((prev) => prev + 1);
-
-      if (selectedImportId === id) {
-        const updated = await importHistoryApi.getById(id);
-        setSelectedItem(normalizeImportRecord(updated));
-      }
     } catch (error) {
       setActionError(error.message || "Failed to reprocess import.");
     } finally {
@@ -277,7 +273,7 @@ export default function ImportsHistory() {
             <h2 className="text-xl font-semibold text-black">Filter Imports</h2>
             <p className="mt-2 text-sm text-neutral-600">
               Search by file name, import code, or report type. Narrow results
-              by status, report category, or upload date.
+              by status, report category, or import date.
             </p>
           </div>
 
@@ -346,7 +342,7 @@ export default function ImportsHistory() {
 
           <div>
             <label className="mb-2 block text-sm font-medium text-black">
-              Upload Date
+              Import Date
             </label>
             <input
               type="date"
@@ -372,8 +368,7 @@ export default function ImportsHistory() {
                 Import Records
               </h2>
               <p className="mt-2 text-sm text-neutral-600">
-                Live data from the backend, aligned with the ImportHistory
-                schema.
+                Live data from the backend import history table.
               </p>
             </div>
 
@@ -426,11 +421,14 @@ export default function ImportsHistory() {
               <DetailCard label="Database ID" value={selectedItem.id} />
               <DetailCard label="Report Type" value={selectedItem.reportType} />
               <DetailCard
-                label="Upload Time"
-                value={formatDateTime(selectedItem.uploadedAt)}
+                label="Created Time"
+                value={formatDateTime(selectedItem.createdAt)}
               />
               <DetailCard label="Status" value={selectedItem.status} />
-              <DetailCard label="File Size" value={selectedItem.fileSize} />
+              <DetailCard
+                label="File Size"
+                value={selectedItem.fileSizeLabel}
+              />
               <DetailCard
                 label="Rows Processed"
                 value={selectedItem.rowsProcessed.toLocaleString()}
@@ -520,12 +518,12 @@ function ImportRecordCard({
                 {item.importCode}
               </p>
               <p>
-                <span className="font-medium text-black">Uploaded:</span>{" "}
-                {formatDateTime(item.uploadedAt)}
+                <span className="font-medium text-black">Created:</span>{" "}
+                {formatDateTime(item.createdAt)}
               </p>
               <p>
                 <span className="font-medium text-black">File Size:</span>{" "}
-                {item.fileSize}
+                {item.fileSizeLabel}
               </p>
               <p>
                 <span className="font-medium text-black">Rows:</span>{" "}
@@ -537,7 +535,7 @@ function ImportRecordCard({
 
             {item.duplicate && (
               <p className="mt-2 text-sm text-neutral-600">
-                Duplicate month detected
+                Duplicate file/report detected
               </p>
             )}
           </div>

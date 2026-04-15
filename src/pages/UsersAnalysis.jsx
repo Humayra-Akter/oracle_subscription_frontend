@@ -6,7 +6,6 @@ import {
   Users,
   ShieldAlert,
   Activity,
-  BriefcaseBusiness,
 } from "lucide-react";
 import AppLayout from "../layouts/AppLayout";
 import StatusCard from "../components/StatusCard";

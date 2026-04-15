@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import AppLayout from "../layouts/AppLayout";
 import StatusCard from "../components/StatusCard";
 
@@ -11,28 +12,28 @@ export default function Dashboard() {
     >
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
         <StatusCard
-          title="Total Licensed Users"
-          value="1,248"
-          subtitle="+4.2% from last month"
+          title="Upload Center"
+          value="Live"
+          subtitle="Process source reports"
           status="success"
         />
         <StatusCard
-          title="Inactive Users"
-          value="187"
-          subtitle="-2.1% from last month"
+          title="Imports History"
+          value="Track"
+          subtitle="Review results and retries"
+          status="processing"
+        />
+        <StatusCard
+          title="Users Analysis"
+          value="Ready"
+          subtitle="Inspect users and roles"
+          status="success"
+        />
+        <StatusCard
+          title="Compliance"
+          value="Soon"
+          subtitle="Rules engine next"
           status="warning"
-        />
-        <StatusCard
-          title="Potential Savings"
-          value="$42,800"
-          subtitle="+8.7% identified"
-          status="success"
-        />
-        <StatusCard
-          title="Compliance Flags"
-          value="29"
-          subtitle="+3 new issues"
-          status="error"
         />
       </div>
 
@@ -40,17 +41,41 @@ export default function Dashboard() {
         <div className="rounded-xl border border-neutral-200 bg-white p-6">
           <h2 className="text-xl font-semibold text-black">Overview</h2>
           <p className="mt-2 text-sm leading-6 text-neutral-600">
-            Welcome, {user?.name || "Admin"}. This area can hold charts, recent
-            imports, trend summaries, and license intelligence widgets.
+            Welcome, {user?.name || "Admin"}. Your backend is now ready to
+            process uploaded Oracle reports, store import history, and build a
+            user-level access and activity view from imported data.
           </p>
+
+          <div className="mt-5 grid gap-3 md:grid-cols-2">
+            <QuickLink
+              to="/upload-center"
+              title="Upload Reports"
+              description="Upload CSV and Excel source files."
+            />
+            <QuickLink
+              to="/imports-history"
+              title="Review Import Results"
+              description="Check completed, failed, and retried imports."
+            />
+            <QuickLink
+              to="/users-analysis"
+              title="Inspect Users"
+              description="Review activity, roles, and privileged access."
+            />
+            <QuickLink
+              to="/compliance"
+              title="Compliance View"
+              description="Reserved for next feature phase."
+            />
+          </div>
         </div>
 
         <div className="rounded-xl border border-neutral-200 bg-white p-6">
           <h2 className="text-xl font-semibold text-black">Quick Actions</h2>
           <div className="mt-4 space-y-3">
-            <QuickButton label="Upload Oracle Report" />
-            <QuickButton label="Review Compliance Flags" />
-            <QuickButton label="Export Savings Report" />
+            <QuickButton to="/upload-center" label="Upload Oracle Report" />
+            <QuickButton to="/imports-history" label="Review Import History" />
+            <QuickButton to="/users-analysis" label="Open Users Analysis" />
           </div>
         </div>
       </div>
@@ -58,10 +83,25 @@ export default function Dashboard() {
   );
 }
 
-function QuickButton({ label }) {
+function QuickButton({ to, label }) {
   return (
-    <button className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-left text-sm font-medium text-black transition hover:bg-neutral-50">
+    <Link
+      to={to}
+      className="block w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-left text-sm font-medium text-black transition hover:bg-neutral-50"
+    >
       {label}
-    </button>
+    </Link>
+  );
+}
+
+function QuickLink({ to, title, description }) {
+  return (
+    <Link
+      to={to}
+      className="rounded-xl border border-neutral-200 bg-neutral-50 p-4 transition hover:bg-white"
+    >
+      <h3 className="text-sm font-semibold text-black">{title}</h3>
+      <p className="mt-2 text-sm text-neutral-600">{description}</p>
+    </Link>
   );
 }
