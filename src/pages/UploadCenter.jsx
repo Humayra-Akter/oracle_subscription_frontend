@@ -6,11 +6,20 @@ import {
   Search,
   Eye,
   FileSpreadsheet,
+  Inbox,
+  ShieldCheck,
 } from "lucide-react";
 import AppLayout from "../layouts/AppLayout";
 import StatusCard from "../components/StatusCard";
+import DataTableShell from "../components/DataTableShell";
 import TablePagination from "../components/TablePagination";
-import DataModal from "../components/DataModal";
+import DetailModal from "../components/DetailModal";
+import {
+  DetailGrid,
+  DetailItem,
+  DetailSection,
+} from "../components/DetailSection";
+import StatusPill from "../components/StatusPill";
 import { fileApi } from "../utils/api";
 
 const REPORT_TYPES = [
@@ -50,6 +59,20 @@ function formatFileSize(bytes) {
   return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 }
 
+function formatDateTime(value) {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+  return date.toLocaleString();
+}
+
+function getStatusTone(status) {
+  if (status === "Completed") return "success";
+  if (status === "Processing" || status === "Queued") return "warning";
+  if (status === "Failed") return "error";
+  return "neutral";
+}
+
 function normalizeQueueItem(item) {
   return {
     id: item.id,
@@ -57,9 +80,7 @@ function normalizeQueueItem(item) {
     storedName: item.storedName,
     fileType: item.fileType,
     reportType: item.reportType,
-    uploadedAt: item.uploadedAt
-      ? new Date(item.uploadedAt).toLocaleString()
-      : "-",
+    uploadedAt: item.uploadedAt || null,
     status: normalizeStatus(item.status),
     fileSizeBytes: item.fileSizeBytes || 0,
     sizeLabel: formatFileSize(item.fileSizeBytes || 0),
@@ -67,25 +88,6 @@ function normalizeQueueItem(item) {
     error: item.error || "",
     latestImportHistory: item.latestImportHistory || null,
   };
-}
-
-function StatusBadge({ status }) {
-  const styles = {
-    Queued: "bg-yellow-50 text-yellow-700 border-yellow-200",
-    Processing: "bg-blue-50 text-blue-700 border-blue-200",
-    Completed: "bg-green-50 text-green-700 border-green-200",
-    Failed: "bg-red-50 text-red-700 border-red-200",
-  };
-
-  return (
-    <span
-      className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${
-        styles[status] || "bg-neutral-50 text-neutral-700 border-neutral-200"
-      }`}
-    >
-      {status}
-    </span>
-  );
 }
 
 export default function UploadCenter() {
@@ -116,11 +118,13 @@ export default function UploadCenter() {
 
   const filteredQueue = useMemo(() => {
     return queue.filter((item) => {
+      const q = searchTerm.toLowerCase();
+
       const matchesSearch =
-        !searchTerm ||
-        item.fileName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.reportType.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.uploadedBy.toLowerCase().includes(searchTerm.toLowerCase());
+        !q ||
+        item.fileName.toLowerCase().includes(q) ||
+        item.reportType.toLowerCase().includes(q) ||
+        item.uploadedBy.toLowerCase().includes(q);
 
       const matchesReport =
         reportFilter === "All" || item.reportType === reportFilter;
@@ -132,7 +136,7 @@ export default function UploadCenter() {
     });
   }, [queue, searchTerm, reportFilter, statusFilter]);
 
-  const totalPages = Math.ceil(filteredQueue.length / PAGE_SIZE) || 1;
+  const totalPages = Math.max(1, Math.ceil(filteredQueue.length / PAGE_SIZE));
 
   const paginatedQueue = useMemo(() => {
     const start = (page - 1) * PAGE_SIZE;
@@ -140,9 +144,7 @@ export default function UploadCenter() {
   }, [filteredQueue, page]);
 
   useEffect(() => {
-    if (page > totalPages) {
-      setPage(1);
-    }
+    if (page > totalPages) setPage(1);
   }, [page, totalPages]);
 
   const loadQueue = async () => {
@@ -238,10 +240,68 @@ export default function UploadCenter() {
     }
   };
 
+  const toolbar = (
+    <div className="grid gap-3 2xl:grid-cols-[1.2fr_240px_180px]">
+      <div className="flex h-12 items-center gap-3 rounded-xl border border-zinc-200 bg-white px-4 shadow-sm">
+        <Search size={18} className="text-zinc-400" />
+        <input
+          type="text"
+          placeholder="Search file, report type, uploaded by"
+          value={searchTerm}
+          onChange={(e) => {
+            setSearchTerm(e.target.value);
+            setPage(1);
+          }}
+          className="w-full bg-transparent text-sm text-zinc-800 outline-none placeholder:text-zinc-400"
+        />
+      </div>
+
+      <select
+        value={reportFilter}
+        onChange={(e) => {
+          setReportFilter(e.target.value);
+          setPage(1);
+        }}
+        className="h-12 rounded-xl border border-zinc-200 bg-white px-4 text-sm text-zinc-700 shadow-sm outline-none"
+      >
+        {REPORT_TYPES.map((type) => (
+          <option key={type} value={type}>
+            {type}
+          </option>
+        ))}
+      </select>
+
+      <select
+        value={statusFilter}
+        onChange={(e) => {
+          setStatusFilter(e.target.value);
+          setPage(1);
+        }}
+        className="h-12 rounded-xl border border-zinc-200 bg-white px-4 text-sm text-zinc-700 shadow-sm outline-none"
+      >
+        <option value="All">All Statuses</option>
+        <option value="Queued">Queued</option>
+        <option value="Processing">Processing</option>
+        <option value="Completed">Completed</option>
+        <option value="Failed">Failed</option>
+      </select>
+    </div>
+  );
+
+  const footer = (
+    <TablePagination
+      page={page}
+      totalPages={totalPages}
+      totalItems={filteredQueue.length}
+      pageSize={PAGE_SIZE}
+      onPageChange={setPage}
+    />
+  );
+
   return (
     <AppLayout
       title="Upload Center"
-      subtitle="Upload Oracle source reports, validate formats, and manage the import queue in a structured table view."
+      subtitle="Premium intake console for Oracle source reports, upload validation, file pipeline status, and operator control."
     >
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
         <StatusCard
@@ -252,151 +312,166 @@ export default function UploadCenter() {
         <StatusCard
           title="Completed"
           value={stats.completed}
-          subtitle="Ready imports"
+          subtitle="Ready for downstream processing"
           status="success"
         />
         <StatusCard
           title="Processing"
           value={stats.processing}
-          subtitle="In progress"
+          subtitle="Pipeline in progress"
           status="processing"
         />
         <StatusCard
           title="Failed"
           value={stats.failed}
-          subtitle="Needs attention"
+          subtitle="Operator attention required"
           status="error"
         />
       </div>
 
-      {pageError && (
-        <div className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+      {pageError ? (
+        <div className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
           {pageError}
         </div>
-      )}
+      ) : null}
 
-      <div className="mt-6 rounded-xl border border-neutral-200 bg-white p-6">
-        <div className="grid gap-4 xl:grid-cols-[1fr_220px_220px_auto]">
-          <div>
-            <label className="mb-2 block text-sm font-medium text-black">
-              Report Type for Upload
-            </label>
-            <select
-              value={selectedReportType}
-              onChange={(e) => setSelectedReportType(e.target.value)}
-              className="w-full rounded-xl border border-neutral-200 px-4 py-3 text-sm"
-            >
-              <option value="">Select report type</option>
-              {REPORT_TYPES.filter((x) => x !== "All").map((type) => (
-                <option key={type} value={type}>
-                  {type}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="xl:col-span-2">
-            <label className="mb-2 block text-sm font-medium text-black">
-              Upload File
-            </label>
+      <div className="mt-6 rounded-[30px] border border-zinc-200 bg-white p-6 shadow-[0_14px_40px_rgba(0,0,0,0.06)]">
+        <div className="grid gap-6 xl:grid-cols-[1.1fr_1fr]">
+          <div className="rounded-[24px] border border-zinc-200 bg-[linear-gradient(180deg,#ffffff_0%,#fafafa_100%)] p-5">
             <div className="flex items-center gap-3">
-              <input
-                ref={inputRef}
-                type="file"
-                multiple
-                accept=".csv,.xlsx,.xls"
-                onChange={(e) => handleFiles(e.target.files)}
-                className="block w-full rounded-xl border border-neutral-200 px-4 py-2.5 text-sm"
-              />
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-zinc-200 bg-white shadow-sm">
+                <Inbox size={18} className="text-zinc-700" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-zinc-950">
+                  Upload Intake
+                </h3>
+                <p className="text-sm text-zinc-500">
+                  Controlled intake for structured enterprise source files
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-5 space-y-4">
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-zinc-800">
+                  Report Type
+                </label>
+                <select
+                  value={selectedReportType}
+                  onChange={(e) => setSelectedReportType(e.target.value)}
+                  className="h-12 w-full rounded-xl border border-zinc-200 bg-white px-4 text-sm text-zinc-700 shadow-sm outline-none"
+                >
+                  <option value="">Select report type</option>
+                  {REPORT_TYPES.filter((x) => x !== "All").map((type) => (
+                    <option key={type} value={type}>
+                      {type}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-zinc-800">
+                  File Source
+                </label>
+                <input
+                  ref={inputRef}
+                  type="file"
+                  multiple
+                  accept=".csv,.xlsx,.xls"
+                  onChange={(e) => handleFiles(e.target.files)}
+                  className="block h-12 w-full rounded-xl border border-zinc-200 bg-white px-4 text-sm text-zinc-700 shadow-sm file:mr-4 file:border-0 file:bg-transparent file:font-semibold"
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={() => inputRef.current?.click()}
+                disabled={uploading}
+                className="inline-flex h-12 items-center gap-2 rounded-xl bg-zinc-950 px-5 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(0,0,0,0.16)] transition hover:bg-black disabled:opacity-60"
+              >
+                <Upload size={16} />
+                {uploading ? "Uploading..." : "Choose Files"}
+              </button>
             </div>
           </div>
 
-          <div className="flex items-end">
-            <button
-              type="button"
-              onClick={() => inputRef.current?.click()}
-              disabled={uploading}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-black px-4 py-3 text-sm font-medium text-white disabled:opacity-60"
-            >
-              <Upload size={16} />
-              {uploading ? "Uploading..." : "Choose Files"}
-            </button>
-          </div>
-        </div>
+          <div className="rounded-[24px] border border-zinc-200 bg-zinc-950 p-5 text-white shadow-[0_16px_40px_rgba(0,0,0,0.18)]">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-zinc-800 bg-zinc-900">
+                <ShieldCheck size={18} className="text-zinc-200" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold">Validation Rules</h3>
+                <p className="text-sm text-zinc-400">
+                  Premium upload gatekeeping for cleaner downstream operations
+                </p>
+              </div>
+            </div>
 
-        <div className="mt-4 rounded-xl border border-dashed border-neutral-300 bg-neutral-50 px-4 py-3 text-sm text-neutral-600">
-          Accepted formats: CSV, XLSX, XLS. Maximum size: {MAX_FILE_SIZE_MB} MB.
+            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+              <div className="rounded-xl border border-zinc-800 bg-zinc-900/80 p-4">
+                <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-zinc-500">
+                  Accepted Formats
+                </div>
+                <p className="mt-2 text-sm font-semibold text-white">
+                  CSV, XLSX, XLS
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-zinc-800 bg-zinc-900/80 p-4">
+                <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-zinc-500">
+                  Max Size
+                </div>
+                <p className="mt-2 text-sm font-semibold text-white">
+                  {MAX_FILE_SIZE_MB} MB
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-zinc-800 bg-zinc-900/80 p-4 sm:col-span-2">
+                <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-zinc-500">
+                  Best Practice
+                </div>
+                <p className="mt-2 text-sm leading-6 text-zinc-300">
+                  Select the correct report type before upload so pipeline
+                  mapping, validation, and queue operations remain consistent.
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="mt-6 rounded-xl border border-neutral-200 bg-white">
-        <div className="border-b border-neutral-200 p-6">
-          <div className="grid gap-4 xl:grid-cols-[1fr_240px_180px]">
-            <div className="flex items-center gap-3 rounded-xl border border-neutral-200 px-4 py-3">
-              <Search size={18} className="text-neutral-500" />
-              <input
-                type="text"
-                placeholder="Search by file name, report type, uploaded by"
-                value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  setPage(1);
-                }}
-                className="w-full bg-transparent text-sm outline-none"
-              />
-            </div>
-
-            <select
-              value={reportFilter}
-              onChange={(e) => {
-                setReportFilter(e.target.value);
-                setPage(1);
-              }}
-              className="rounded-xl border border-neutral-200 px-4 py-3 text-sm"
-            >
-              {REPORT_TYPES.map((type) => (
-                <option key={type} value={type}>
-                  {type}
-                </option>
-              ))}
-            </select>
-
-            <select
-              value={statusFilter}
-              onChange={(e) => {
-                setStatusFilter(e.target.value);
-                setPage(1);
-              }}
-              className="rounded-xl border border-neutral-200 px-4 py-3 text-sm"
-            >
-              <option value="All">All Statuses</option>
-              <option value="Queued">Queued</option>
-              <option value="Processing">Processing</option>
-              <option value="Completed">Completed</option>
-              <option value="Failed">Failed</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-left text-sm">
-            <thead className="border-b border-neutral-200 bg-neutral-50">
+      <div className="mt-6">
+        <DataTableShell
+          title="Upload Queue"
+          subtitle="Operational table for uploaded files, processing state, and file-level actions."
+          toolbar={toolbar}
+          footer={footer}
+        >
+          <table className="min-w-full text-left">
+            <thead className="border-b border-zinc-200 bg-zinc-50/90">
               <tr>
-                <th className="px-6 py-4 font-medium text-neutral-600">File</th>
-                <th className="px-6 py-4 font-medium text-neutral-600">
+                <th className="px-4 py-3 text-xs font-bold uppercase text-zinc-500 text-center">
+                  File
+                </th>
+                <th className="px-4 py-3 text-xs font-bold uppercase text-zinc-500 text-center">
                   Report Type
                 </th>
-                <th className="px-6 py-4 font-medium text-neutral-600">Size</th>
-                <th className="px-6 py-4 font-medium text-neutral-600">
+                <th className="px-4 py-3 text-xs font-bold uppercase text-zinc-500 text-center">
+                  Size
+                </th>
+                <th className="px-4 py-3 text-xs font-bold uppercase text-zinc-500 text-center">
                   Uploaded By
                 </th>
-                <th className="px-6 py-4 font-medium text-neutral-600">
+                <th className="px-4 py-3 text-xs font-bold uppercase text-zinc-500 text-center">
                   Uploaded At
                 </th>
-                <th className="px-6 py-4 font-medium text-neutral-600">
+                <th className="px-4 py-3 text-xs font-bold uppercase text-zinc-500 text-center">
                   Status
                 </th>
-                <th className="px-6 py-4 font-medium text-neutral-600">
+                <th className="px-4 py-3 text-xs font-bold uppercase text-zinc-500 text-center">
                   Actions
                 </th>
               </tr>
@@ -407,7 +482,7 @@ export default function UploadCenter() {
                 <tr>
                   <td
                     colSpan="7"
-                    className="px-6 py-10 text-center text-neutral-500"
+                    className="px-4 py-14 text-center text-sm text-zinc-500"
                   >
                     Loading upload queue...
                   </td>
@@ -416,75 +491,90 @@ export default function UploadCenter() {
                 <tr>
                   <td
                     colSpan="7"
-                    className="px-6 py-10 text-center text-neutral-500"
+                    className="px-4 py-14 text-center text-sm text-zinc-500"
                   >
                     No files found.
                   </td>
                 </tr>
               ) : (
                 paginatedQueue.map((item) => (
-                  <tr key={item.id} className="border-b border-neutral-100">
-                    <td className="px-6 py-4">
+                  <tr
+                    key={item.id}
+                    className="border-b border-zinc-100 transition hover:bg-zinc-50/80"
+                  >
+                    <td className="px-4 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-neutral-200 bg-neutral-50">
-                          <FileSpreadsheet size={18} />
+                        <div className="flex h-7 w-7 items-center justify-center rounded-full border border-zinc-200 bg-white shadow-sm">
+                          <FileSpreadsheet
+                            size={15}
+                            className="text-zinc-700"
+                          />
                         </div>
                         <div>
-                          <p className="font-medium text-black">
+                          <p className="font-semibold text-zinc-950">
                             {item.fileName}
                           </p>
-                          <p className="text-xs text-neutral-500">
+                          <p className="text-sm text-zinc-500">
                             {item.fileType}
                           </p>
                         </div>
                       </div>
                     </td>
 
-                    <td className="px-6 py-4 text-neutral-700">
+                    <td className="px-4 py-4 text-sm font-medium text-zinc-700">
                       {item.reportType}
                     </td>
-                    <td className="px-6 py-4 text-neutral-700">
+
+                    <td className="px-4 py-4 text-sm font-semibold text-zinc-800">
                       {item.sizeLabel}
                     </td>
-                    <td className="px-6 py-4 text-neutral-700">
+
+                    <td className="px-4 py-4 text-sm text-zinc-700">
                       {item.uploadedBy}
                     </td>
-                    <td className="px-6 py-4 text-neutral-700">
-                      {item.uploadedAt}
+
+                    <td className="px-4 py-4 text-sm text-zinc-600">
+                      {formatDateTime(item.uploadedAt)}
                     </td>
-                    <td className="px-6 py-4">
-                      <StatusBadge status={item.status} />
+
+                    <td className="px-4 py-4">
+                      <StatusPill
+                        value={item.status}
+                        type={getStatusTone(item.status)}
+                        dot
+                      />
                     </td>
-                    <td className="px-6 py-4">
+
+                    <td className="px-4 py-4">
                       <div className="flex flex-wrap gap-2">
                         <button
                           type="button"
                           onClick={() => setSelectedRow(item)}
-                          className="inline-flex items-center gap-2 rounded-lg border border-neutral-200 px-3 py-2 text-xs font-medium"
+                          className="inline-flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-2 py-1 text-sm font-semibold text-zinc-800 shadow-sm transition hover:bg-zinc-50"
                         >
-                          <Eye size={14} />
+                          <Eye size={15} />
                           View
                         </button>
 
-                        {item.status === "Failed" && (
+                        {item.status === "Failed" ? (
                           <button
                             type="button"
                             disabled={busyId === item.id}
                             onClick={() => handleRetry(item.id)}
-                            className="inline-flex items-center gap-2 rounded-lg border border-neutral-200 px-3 py-2 text-xs font-medium"
+                            className="inline-flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-2 py-1 text-sm font-semibold text-zinc-800 shadow-sm transition hover:bg-zinc-50 disabled:opacity-50"
                           >
-                            <RotateCcw size={14} />
+                            <RotateCcw size={15} />
                             Retry
                           </button>
-                        )}
+                        ) : null}
 
                         <button
                           type="button"
                           disabled={busyId === item.id}
                           onClick={() => handleDelete(item.id)}
-                          className="inline-flex items-center gap-2 rounded-lg border border-neutral-200 px-3 py-2 text-xs font-medium"
+                          className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-2 py-1 text-sm font-semibold text-red-700 shadow-sm transition hover:bg-red-100 disabled:opacity-50"
                         >
-                          <Trash2 size={14} />
+                          <Trash2 size={15} />
                           Delete
                         </button>
                       </div>
@@ -494,49 +584,62 @@ export default function UploadCenter() {
               )}
             </tbody>
           </table>
-        </div>
-
-        <TablePagination
-          page={page}
-          totalPages={totalPages}
-          totalItems={filteredQueue.length}
-          pageSize={PAGE_SIZE}
-          onPageChange={setPage}
-        />
+        </DataTableShell>
       </div>
 
-      <DataModal
+      <DetailModal
         open={!!selectedRow}
-        title="Upload Details"
         onClose={() => setSelectedRow(null)}
+        title="Upload Details"
+        subtitle="Source file metadata and upload pipeline status."
+        width="max-w-5xl"
       >
-        {selectedRow && (
-          <div className="grid gap-4 md:grid-cols-2">
-            <DetailItem label="File Name" value={selectedRow.fileName} />
-            <DetailItem label="Stored Name" value={selectedRow.storedName} />
-            <DetailItem label="Report Type" value={selectedRow.reportType} />
-            <DetailItem label="File Type" value={selectedRow.fileType} />
-            <DetailItem label="Size" value={selectedRow.sizeLabel} />
-            <DetailItem label="Uploaded By" value={selectedRow.uploadedBy} />
-            <DetailItem label="Uploaded At" value={selectedRow.uploadedAt} />
-            <DetailItem label="Status" value={selectedRow.status} />
-            <div className="md:col-span-2">
-              <DetailItem label="Error" value={selectedRow.error || "-"} />
-            </div>
+        {selectedRow ? (
+          <div className="space-y-5">
+            <DetailSection title="File Metadata">
+              <DetailGrid>
+                <DetailItem
+                  label="File Name"
+                  value={selectedRow.fileName}
+                  emphasis
+                />
+                <DetailItem
+                  label="Stored Name"
+                  value={selectedRow.storedName}
+                />
+                <DetailItem
+                  label="Report Type"
+                  value={selectedRow.reportType}
+                />
+                <DetailItem label="File Type" value={selectedRow.fileType} />
+                <DetailItem label="Size" value={selectedRow.sizeLabel} />
+                <DetailItem
+                  label="Uploaded By"
+                  value={selectedRow.uploadedBy}
+                />
+                <DetailItem
+                  label="Uploaded At"
+                  value={formatDateTime(selectedRow.uploadedAt)}
+                />
+                <DetailItem
+                  label="Status"
+                  value={
+                    <StatusPill
+                      value={selectedRow.status}
+                      type={getStatusTone(selectedRow.status)}
+                    />
+                  }
+                />
+                <DetailItem
+                  label="Error"
+                  value={selectedRow.error || "No error message"}
+                  fullWidth
+                />
+              </DetailGrid>
+            </DetailSection>
           </div>
-        )}
-      </DataModal>
+        ) : null}
+      </DetailModal>
     </AppLayout>
-  );
-}
-
-function DetailItem({ label, value }) {
-  return (
-    <div className="rounded-xl border border-neutral-200 p-4">
-      <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">
-        {label}
-      </p>
-      <p className="mt-2 break-words text-sm text-black">{value}</p>
-    </div>
   );
 }

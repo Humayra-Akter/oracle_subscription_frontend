@@ -1,42 +1,56 @@
-//src\components\StatusCard.jsx
+import {
+  CheckCircle2,
+  AlertTriangle,
+  Clock3,
+  ShieldAlert,
+  ArrowUpRight,
+} from "lucide-react";
+import { cn } from "../utils/ui";
 
-import { CheckCircle2, AlertCircle, Clock3, RefreshCw } from "lucide-react";
-
-const STATUS_STYLES = {
-  success: {
-    border: "border-green-200 shadow-sm hover:shadow-md",
-    bg: "bg-gradient-to-br from-green-50 to-emerald-100",
-    text: "text-emerald-800",
-    sub: "text-emerald-600",
-    icon: <CheckCircle2 size={18} />,
+const cardTone = {
+  default: {
+    shell: "border-zinc-200/80 bg-gradient-to-br from-zinc-100 to-slate-200 shadow-md",
+    badge: "bg-zinc-100 text-zinc-700 border-zinc-200",
+    title: "text-zinc-600",
+    value: "text-zinc-800",
+    subtitle: "text-zinc-600",
+    icon: null,
   },
-  error: {
-    border: "border-red-200 shadow-sm hover:shadow-md",
-    bg: "bg-gradient-to-br from-red-50 to-rose-100",
-    text: "text-red-700",
-    sub: "text-red-600",
-    icon: <AlertCircle size={18} />,
+  success: {
+    shell:
+      "border-emerald-200/80 bg-gradient-to-br from-green-50 to-emerald-100 shadow-md",
+    badge: "bg-emerald-100 text-emerald-700 border-emerald-200",
+    title: "text-emerald-700",
+    value: "text-emerald-800",
+    subtitle: "text-emerald-700/80",
+    icon: <CheckCircle2 size={16} />,
   },
   warning: {
-    border: "border-amber-200 shadow-sm hover:shadow-md",
-    bg: "bg-gradient-to-br from-yellow-50 to-amber-100",
-    text: "text-yellow-800",
-    sub: "text-yellow-600",
-    icon: <Clock3 size={18} />,
+    shell:
+      "border-amber-200/80 bg-gradient-to-br from-amber-50 to-yellow-100 shadow-md",
+    badge: "bg-amber-100 text-amber-700 border-amber-200",
+    title: "text-amber-700",
+    value: "text-amber-800",
+    subtitle: "text-amber-700/80",
+    icon: <Clock3 size={16} />,
+  },
+  error: {
+    shell:
+      "border-red-200/80 bg-gradient-to-br from-red-50 to-rose-100 shadow-md",
+    badge: "bg-red-100 text-red-700 border-red-200",
+    title: "text-red-700",
+    value: "text-red-800",
+    subtitle: "text-red-700/80",
+    icon: <ShieldAlert size={16} />,
   },
   processing: {
-    border: "border-amber-200 shadow-sm hover:shadow-md",
-    bg: "bg-gradient-to-br from-yellow-50 to-amber-100",
-    text: "text-yellow-800",
-    sub: "text-yellow-600",
-    icon: <RefreshCw size={18} className="animate-spin" />,
-  },
-  default: {
-    border: "border-neutral-200 shadow-sm hover:shadow-md",
-    bg: "bg-gradient-to-br from-black/5 to-black/10",
-    text: "text-black",
-    sub: "text-neutral-600",
-    icon: null,
+    shell:
+      "border-sky-200/80 bg-gradient-to-br from-sky-50 to-indigo-50 shadow-md",
+    badge: "bg-sky-100 text-sky-700 border-sky-200",
+    title: "text-sky-700",
+    value: "text-sky-800",
+    subtitle: "text-sky-700/80",
+    icon: <AlertTriangle size={16} />,
   },
 };
 
@@ -46,21 +60,40 @@ export default function StatusCard({
   subtitle,
   status = "default",
 }) {
-  const style = STATUS_STYLES[status] || STATUS_STYLES.default;
+  const tone = cardTone[status] || cardTone.default;
 
   return (
-    <div className={`rounded-xl border p-5 ${style.border} ${style.bg}`}>
-      {/* Top row */}
-      <div className="flex items-center justify-between">
-        <p className={`text-sm font-medium ${style.sub}`}>{title}</p>
-        {style.icon && <div className={`${style.text}`}>{style.icon}</div>}
+    <div
+      className={cn(
+        "group relative overflow-hidden rounded-xl border py-3 px-5 transition duration-300 hover:-translate-y-[1px]",
+        tone.shell,
+      )}
+    >
+      {/* <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-black/10 to-transparent" /> */}
+
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className={cn("text-xl font-semibold", tone.title)}>{title}</p>
+          <div className="mt-2 flex items-end gap-2">
+            <h3 className={cn("text-3xl font-bold tracking-tight", tone.value)}>
+              {value}
+            </h3>
+          </div>
+        </div>
+
+        <div
+          className={cn(
+            "inline-flex h-7 w-7 items-center justify-center rounded-full border",
+            tone.badge,
+          )}
+        >
+          {tone.icon || <ArrowUpRight size={16} />}
+        </div>
       </div>
 
-      {/* Value */}
-      <h3 className={`mt-3 text-3xl font-semibold ${style.text}`}>{value}</h3>
-
-      {/* Subtitle */}
-      {subtitle && <p className={`mt-2 text-sm ${style.sub}`}>{subtitle}</p>}
+      {subtitle ? (
+        <p className={cn("mt-2 text-sm", tone.subtitle)}>{subtitle}</p>
+      ) : null}
     </div>
   );
 }

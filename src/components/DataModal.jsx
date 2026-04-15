@@ -1,24 +1,40 @@
-import React from "react";
 import { X } from "lucide-react";
 
 export default function DataModal({ open, title, onClose, children }) {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="w-full max-w-3xl rounded-2xl border border-neutral-200 bg-white shadow-2xl">
-        <div className="flex items-center justify-between border-b border-neutral-200 px-6 py-4">
-          <h2 className="text-lg font-semibold text-black">{title}</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg border border-neutral-200 p-2 text-black hover:bg-neutral-50"
-          >
-            <X size={18} />
-          </button>
-        </div>
+    <div className="fixed inset-0 z-50">
+      <div
+        className="absolute inset-0 bg-[rgba(0,0,0,0.42)] backdrop-blur-[6px]"
+        onClick={onClose}
+      />
 
-        <div className="max-h-[75vh] overflow-y-auto p-6">{children}</div>
+      <div className="absolute inset-0 overflow-y-auto p-4 md:p-8">
+        <div className="mx-auto w-full max-w-4xl overflow-hidden rounded-xl border border-white/70 bg-white shadow-[0_24px_80px_rgba(0,0,0,0.22)]">
+          <div className="sticky top-0 z-10 flex items-center justify-between border-b border-zinc-200 bg-white/95 px-6 py-5 backdrop-blur">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-400">
+                Detail View
+              </p>
+              <h2 className="mt-1 text-2xl font-bold tracking-tight text-zinc-950">
+                {title}
+              </h2>
+            </div>
+
+            <button
+              type="button"
+              onClick={onClose}
+              className="inline-flex h-12 w-12 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-700 transition hover:bg-zinc-50"
+            >
+              <X size={20} />
+            </button>
+          </div>
+
+          <div className="max-h-[78vh] overflow-y-auto px-6 py-6">
+            {children}
+          </div>
+        </div>
       </div>
     </div>
   );

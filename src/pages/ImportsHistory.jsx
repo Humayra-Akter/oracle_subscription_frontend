@@ -1,9 +1,23 @@
 import { useEffect, useMemo, useState } from "react";
-import { Search, Eye, RefreshCw, Trash2 } from "lucide-react";
+import {
+  Search,
+  Eye,
+  RefreshCw,
+  Trash2,
+  FileSpreadsheet,
+  DatabaseZap,
+} from "lucide-react";
 import AppLayout from "../layouts/AppLayout";
 import StatusCard from "../components/StatusCard";
+import DataTableShell from "../components/DataTableShell";
 import TablePagination from "../components/TablePagination";
-import DataModal from "../components/DataModal";
+import DetailModal from "../components/DetailModal";
+import {
+  DetailGrid,
+  DetailItem,
+  DetailSection,
+} from "../components/DetailSection";
+import StatusPill from "../components/StatusPill";
 import { importHistoryApi } from "../utils/api";
 
 const REPORT_TYPES = [
@@ -59,23 +73,11 @@ function formatDateTime(dateString) {
   return date.toLocaleString();
 }
 
-function StatusBadge({ status }) {
-  const styles = {
-    Queued: "bg-yellow-50 text-yellow-700 border-yellow-200",
-    Processing: "bg-blue-50 text-blue-700 border-blue-200",
-    Completed: "bg-green-50 text-green-700 border-green-200",
-    Failed: "bg-red-50 text-red-700 border-red-200",
-  };
-
-  return (
-    <span
-      className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${
-        styles[status] || "bg-neutral-50 text-neutral-700 border-neutral-200"
-      }`}
-    >
-      {status}
-    </span>
-  );
+function getStatusTone(status) {
+  if (status === "Completed") return "success";
+  if (status === "Processing" || status === "Queued") return "warning";
+  if (status === "Failed") return "error";
+  return "neutral";
 }
 
 export default function ImportsHistory() {
@@ -132,7 +134,7 @@ export default function ImportsHistory() {
     loadImports();
   }, [searchTerm, statusFilter, typeFilter, dateFilter]);
 
-  const totalPages = Math.ceil(imports.length / PAGE_SIZE) || 1;
+  const totalPages = Math.max(1, Math.ceil(imports.length / PAGE_SIZE));
 
   const paginatedItems = useMemo(() => {
     const start = (page - 1) * PAGE_SIZE;
@@ -168,10 +170,78 @@ export default function ImportsHistory() {
     }
   };
 
+  const toolbar = (
+    <div className="grid gap-3 2xl:grid-cols-[1.2fr_220px_220px_180px]">
+      <div className="flex h-12 items-center gap-3 rounded-xl border border-zinc-200 bg-white px-4 shadow-sm">
+        <Search size={18} className="text-zinc-400" />
+        <input
+          type="text"
+          placeholder="Search file, import code, report type"
+          value={searchTerm}
+          onChange={(e) => {
+            setSearchTerm(e.target.value);
+            setPage(1);
+          }}
+          className="w-full bg-transparent text-sm text-zinc-800 outline-none placeholder:text-zinc-400"
+        />
+      </div>
+
+      <select
+        value={statusFilter}
+        onChange={(e) => {
+          setStatusFilter(e.target.value);
+          setPage(1);
+        }}
+        className="h-12 rounded-xl border border-zinc-200 bg-white px-4 text-sm text-zinc-700 shadow-sm outline-none"
+      >
+        <option value="All">All Statuses</option>
+        <option value="Completed">Completed</option>
+        <option value="Processing">Processing</option>
+        <option value="Queued">Queued</option>
+        <option value="Failed">Failed</option>
+      </select>
+
+      <select
+        value={typeFilter}
+        onChange={(e) => {
+          setTypeFilter(e.target.value);
+          setPage(1);
+        }}
+        className="h-12 rounded-xl border border-zinc-200 bg-white px-4 text-sm text-zinc-700 shadow-sm outline-none"
+      >
+        {REPORT_TYPES.map((type) => (
+          <option key={type} value={type}>
+            {type}
+          </option>
+        ))}
+      </select>
+
+      <input
+        type="date"
+        value={dateFilter}
+        onChange={(e) => {
+          setDateFilter(e.target.value);
+          setPage(1);
+        }}
+        className="h-12 rounded-xl border border-zinc-200 bg-white px-4 text-sm text-zinc-700 shadow-sm outline-none"
+      />
+    </div>
+  );
+
+  const footer = (
+    <TablePagination
+      page={page}
+      totalPages={totalPages}
+      totalItems={imports.length}
+      pageSize={PAGE_SIZE}
+      onPageChange={setPage}
+    />
+  );
+
   return (
     <AppLayout
       title="Imports History"
-      subtitle="Review import results with table controls, search, filters, pagination, and row actions."
+      subtitle="Premium review surface for import results, processing health, duplicate detection, and operator actions."
     >
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
         <StatusCard
@@ -182,109 +252,55 @@ export default function ImportsHistory() {
         <StatusCard
           title="Completed"
           value={stats.completed}
-          subtitle="Processed"
+          subtitle="Processed successfully"
           status="success"
         />
         <StatusCard
           title="Processing"
           value={stats.processing}
-          subtitle="In progress"
+          subtitle="Running jobs"
           status="processing"
         />
         <StatusCard
           title="Failed"
           value={stats.failed}
-          subtitle="Needs review"
+          subtitle="Requires operator review"
           status="error"
         />
       </div>
 
-      {pageError && (
-        <div className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+      {pageError ? (
+        <div className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-4 text-sm font-medium text-red-700">
           {pageError}
         </div>
-      )}
+      ) : null}
 
-      <div className="mt-6 rounded-xl border border-neutral-200 bg-white">
-        <div className="border-b border-neutral-200 p-6">
-          <div className="grid gap-4 xl:grid-cols-[1fr_220px_220px_180px]">
-            <div className="flex items-center gap-3 rounded-xl border border-neutral-200 px-4 py-3">
-              <Search size={18} className="text-neutral-500" />
-              <input
-                type="text"
-                placeholder="Search file name, code, report type"
-                value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  setPage(1);
-                }}
-                className="w-full bg-transparent text-sm outline-none"
-              />
-            </div>
-
-            <select
-              value={statusFilter}
-              onChange={(e) => {
-                setStatusFilter(e.target.value);
-                setPage(1);
-              }}
-              className="rounded-xl border border-neutral-200 px-4 py-3 text-sm"
-            >
-              <option value="All">All Statuses</option>
-              <option value="Completed">Completed</option>
-              <option value="Processing">Processing</option>
-              <option value="Queued">Queued</option>
-              <option value="Failed">Failed</option>
-            </select>
-
-            <select
-              value={typeFilter}
-              onChange={(e) => {
-                setTypeFilter(e.target.value);
-                setPage(1);
-              }}
-              className="rounded-xl border border-neutral-200 px-4 py-3 text-sm"
-            >
-              {REPORT_TYPES.map((type) => (
-                <option key={type} value={type}>
-                  {type}
-                </option>
-              ))}
-            </select>
-
-            <input
-              type="date"
-              value={dateFilter}
-              onChange={(e) => {
-                setDateFilter(e.target.value);
-                setPage(1);
-              }}
-              className="rounded-xl border border-neutral-200 px-4 py-3 text-sm"
-            />
-          </div>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-left text-sm">
-            <thead className="border-b border-neutral-200 bg-neutral-50">
+      <div className="mt-6">
+        <DataTableShell
+          title="Import Register"
+          subtitle="Structured processing table with status visibility, reprocess actions, and clean audit review."
+          toolbar={toolbar}
+          footer={footer}
+        >
+          <table className="min-w-full text-left">
+            <thead className="border-b border-zinc-200 bg-zinc-100">
               <tr>
-                <th className="px-6 py-4 font-medium text-neutral-600">
-                  Import Code
+                <th className="px-4 py-4 text-xs font-bold uppercase text-center text-zinc-500">
+                  Import
                 </th>
-                <th className="px-6 py-4 font-medium text-neutral-600">
-                  File Name
-                </th>
-                <th className="px-6 py-4 font-medium text-neutral-600">
+                <th className="px-4 py-4 text-xs font-bold uppercase text-center text-zinc-500">
                   Report Type
                 </th>
-                <th className="px-6 py-4 font-medium text-neutral-600">
+                <th className="px-4 py-4 text-xs font-bold uppercase text-center text-zinc-500">
                   Status
                 </th>
-                <th className="px-6 py-4 font-medium text-neutral-600">Rows</th>
-                <th className="px-6 py-4 font-medium text-neutral-600">
+                <th className="px-4 py-4 text-xs font-bold uppercase text-center text-zinc-500">
+                  Rows
+                </th>
+                <th className="px-3 py-4 text-xs font-bold uppercase text-center text-zinc-500">
                   Created
                 </th>
-                <th className="px-6 py-4 font-medium text-neutral-600">
+                <th className="px-4 py-4 text-xs font-bold uppercase text-center text-zinc-500">
                   Actions
                 </th>
               </tr>
@@ -294,8 +310,8 @@ export default function ImportsHistory() {
               {loading ? (
                 <tr>
                   <td
-                    colSpan="7"
-                    className="px-6 py-10 text-center text-neutral-500"
+                    colSpan="6"
+                    className="px-4 py-14 text-center text-sm text-zinc-500"
                   >
                     Loading import records...
                   </td>
@@ -303,41 +319,62 @@ export default function ImportsHistory() {
               ) : paginatedItems.length === 0 ? (
                 <tr>
                   <td
-                    colSpan="7"
-                    className="px-6 py-10 text-center text-neutral-500"
+                    colSpan="6"
+                    className="px-4 py-14 text-center text-sm text-zinc-500"
                   >
                     No import records found.
                   </td>
                 </tr>
               ) : (
                 paginatedItems.map((item) => (
-                  <tr key={item.id} className="border-b border-neutral-100">
-                    <td className="px-6 py-4 font-medium text-black">
-                      {item.importCode}
+                  <tr
+                    key={item.id}
+                    className="border-b border-zinc-100 transition hover:bg-zinc-50/80"
+                  >
+                    <td className="px-4 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center justify-center rounded-full border border-zinc-200 bg-white shadow-sm">
+                          <DatabaseZap size={15} className="text-zinc-700" />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-zinc-950">
+                            {item.importCode}
+                          </p>
+                          <p className="text-sm text-zinc-500">
+                            {item.fileName}
+                          </p>
+                        </div>
+                      </div>
                     </td>
-                    <td className="px-6 py-4 text-neutral-700">
-                      {item.fileName}
-                    </td>
-                    <td className="px-6 py-4 text-neutral-700">
+
+                    <td className="px-4 py-4 text-sm font-medium text-zinc-700">
                       {item.reportType}
                     </td>
-                    <td className="px-6 py-4">
-                      <StatusBadge status={item.status} />
+
+                    <td className="px-4 py-4">
+                      <StatusPill
+                        value={item.status}
+                        type={getStatusTone(item.status)}
+                        dot
+                      />
                     </td>
-                    <td className="px-6 py-4 text-neutral-700">
+
+                    <td className="px-4 py-4 text-sm font-semibold text-zinc-800">
                       {item.rowsProcessed}
                     </td>
-                    <td className="px-6 py-4 text-neutral-700">
+
+                    <td className="px-3 py-4 text-sm text-zinc-600">
                       {formatDateTime(item.createdAt)}
                     </td>
-                    <td className="px-6 py-4">
+
+                    <td className="px-4 py-4">
                       <div className="flex flex-wrap gap-2">
                         <button
                           type="button"
                           onClick={() => setSelectedRow(item)}
-                          className="inline-flex items-center gap-2 rounded-lg border border-neutral-200 px-3 py-2 text-xs font-medium"
+                          className="inline-flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-2 py-1 text-sm font-semibold text-zinc-800 shadow-sm transition hover:bg-zinc-50"
                         >
-                          <Eye size={14} />
+                          <Eye size={15} />
                           View
                         </button>
 
@@ -345,9 +382,9 @@ export default function ImportsHistory() {
                           type="button"
                           disabled={actionBusyId === item.id}
                           onClick={() => handleReprocess(item.id)}
-                          className="inline-flex items-center gap-2 rounded-lg border border-neutral-200 px-3 py-2 text-xs font-medium"
+                          className="inline-flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-2 py-1 text-sm font-semibold text-zinc-800 shadow-sm transition hover:bg-zinc-50 disabled:opacity-50"
                         >
-                          <RefreshCw size={14} />
+                          <RefreshCw size={15} />
                           Reprocess
                         </button>
 
@@ -355,9 +392,9 @@ export default function ImportsHistory() {
                           type="button"
                           disabled={actionBusyId === item.id}
                           onClick={() => handleDelete(item.id)}
-                          className="inline-flex items-center gap-2 rounded-lg border border-neutral-200 px-3 py-2 text-xs font-medium"
+                          className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-2 py-1 text-sm font-semibold text-red-700 shadow-sm transition hover:bg-red-100 disabled:opacity-50"
                         >
-                          <Trash2 size={14} />
+                          <Trash2 size={15} />
                           Delete
                         </button>
                       </div>
@@ -367,59 +404,79 @@ export default function ImportsHistory() {
               )}
             </tbody>
           </table>
-        </div>
-
-        <TablePagination
-          page={page}
-          totalPages={totalPages}
-          totalItems={imports.length}
-          pageSize={PAGE_SIZE}
-          onPageChange={setPage}
-        />
+        </DataTableShell>
       </div>
 
-      <DataModal
+      <DetailModal
         open={!!selectedRow}
         title="Import Details"
+        subtitle="Detailed metadata and processing result for the selected import."
         onClose={() => setSelectedRow(null)}
+        width="max-w-5xl"
       >
-        {selectedRow && (
-          <div className="grid gap-4 md:grid-cols-2">
-            <DetailItem label="Import Code" value={selectedRow.importCode} />
-            <DetailItem label="File Name" value={selectedRow.fileName} />
-            <DetailItem label="Report Type" value={selectedRow.reportType} />
-            <DetailItem label="Status" value={selectedRow.status} />
-            <DetailItem
-              label="Created"
-              value={formatDateTime(selectedRow.createdAt)}
-            />
-            <DetailItem label="File Size" value={selectedRow.fileSizeLabel} />
-            <DetailItem
-              label="Rows Processed"
-              value={selectedRow.rowsProcessed}
-            />
-            <DetailItem label="Imported By" value={selectedRow.importedBy} />
-            <div className="md:col-span-2">
-              <DetailItem label="Message" value={selectedRow.message} />
-            </div>
-            <DetailItem
-              label="Duplicate"
-              value={selectedRow.duplicate ? "Yes" : "No"}
-            />
-          </div>
-        )}
-      </DataModal>
-    </AppLayout>
-  );
-}
+        {selectedRow ? (
+          <div className="space-y-5">
+            <DetailSection title="Import Summary">
+              <DetailGrid>
+                <DetailItem
+                  label="Import Code"
+                  value={selectedRow.importCode}
+                  emphasis
+                />
+                <DetailItem label="File Name" value={selectedRow.fileName} />
+                <DetailItem
+                  label="Report Type"
+                  value={selectedRow.reportType}
+                />
+                <DetailItem
+                  label="Status"
+                  value={
+                    <StatusPill
+                      value={selectedRow.status}
+                      type={getStatusTone(selectedRow.status)}
+                    />
+                  }
+                />
+                <DetailItem
+                  label="Created"
+                  value={formatDateTime(selectedRow.createdAt)}
+                />
+                <DetailItem
+                  label="Imported By"
+                  value={selectedRow.importedBy}
+                />
+              </DetailGrid>
+            </DetailSection>
 
-function DetailItem({ label, value }) {
-  return (
-    <div className="rounded-xl border border-neutral-200 p-4">
-      <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">
-        {label}
-      </p>
-      <p className="mt-2 break-words text-sm text-black">{value}</p>
-    </div>
+            <DetailSection title="Processing Metrics">
+              <DetailGrid>
+                <DetailItem
+                  label="Rows Processed"
+                  value={selectedRow.rowsProcessed}
+                />
+                <DetailItem
+                  label="File Size"
+                  value={selectedRow.fileSizeLabel}
+                />
+                <DetailItem
+                  label="Duplicate"
+                  value={
+                    <StatusPill
+                      value={selectedRow.duplicate ? "Yes" : "No"}
+                      type={selectedRow.duplicate ? "warning" : "neutral"}
+                    />
+                  }
+                />
+                <DetailItem
+                  label="Message"
+                  value={selectedRow.message}
+                  fullWidth
+                />
+              </DetailGrid>
+            </DetailSection>
+          </div>
+        ) : null}
+      </DetailModal>
+    </AppLayout>
   );
 }

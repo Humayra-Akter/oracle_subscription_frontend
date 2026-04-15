@@ -1,29 +1,46 @@
+import { cn } from "../utils/ui";
+
 export default function DataTableShell({
   title,
   subtitle,
   toolbar,
   children,
   footer,
+  rightActions,
 }) {
   return (
-    <div className="rounded-2xl border border-neutral-200 bg-white">
-      <div className="border-b border-neutral-200 px-6 py-5">
-        <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
-          <div>
-            <h2 className="text-xl font-semibold text-black">{title}</h2>
+    <section className="overflow-hidden rounded-[28px] border border-zinc-200 bg-white shadow-[0_14px_40px_rgba(0,0,0,0.06)]">
+      <div className="border-b border-zinc-200 bg-[linear-gradient(180deg,#ffffff_0%,#fafafa_100%)] px-6 py-6">
+        <div className="flex flex-col gap-5 2xl:flex-row 2xl:items-end 2xl:justify-between">
+          <div className="min-w-0">
+            <div className="inline-flex rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
+              Operational Grid
+            </div>
+
+            <h2 className="mt-3 text-2xl font-bold tracking-tight text-zinc-950">
+              {title}
+            </h2>
+
             {subtitle ? (
-              <p className="mt-1 text-sm text-neutral-500">{subtitle}</p>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-zinc-500">
+                {subtitle}
+              </p>
             ) : null}
           </div>
-          {toolbar ? <div>{toolbar}</div> : null}
+
+          {rightActions ? <div>{rightActions}</div> : null}
         </div>
+
+        {toolbar ? <div className="mt-5">{toolbar}</div> : null}
       </div>
 
       <div className="overflow-x-auto">{children}</div>
 
       {footer ? (
-        <div className="border-t border-neutral-200 px-6 py-4">{footer}</div>
+        <div className="border-t border-zinc-200 bg-zinc-50/80 px-6 py-4">
+          {footer}
+        </div>
       ) : null}
-    </div>
+    </section>
   );
 }

@@ -45,7 +45,7 @@ export default function Sidebar({ collapsed, setCollapsed }) {
       <div className="flex h-full flex-col">
         <div className="flex items-center justify-between px-4 py-5">
           <div className="flex items-center gap-3 overflow-hidden">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/15 bg-white text-black">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-white/15 bg-white text-black">
               <ShieldCheck size={22} />
             </div>
 
@@ -75,7 +75,7 @@ export default function Sidebar({ collapsed, setCollapsed }) {
         </div>
 
         <div className="px-3 pb-4">
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
+          <div className="rounded-xl border border-white/10 bg-white/5 p-3">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white text-black">
                 <ShieldCheck size={18} />
@@ -105,7 +105,7 @@ export default function Sidebar({ collapsed, setCollapsed }) {
                   key={item.path}
                   to={item.path}
                   className={({ isActive }) =>
-                    `group flex items-center gap-3 rounded-2xl px-3 py-1 transition-all duration-200 ${
+                    `group flex items-center gap-3 rounded-xl px-3 py-1 transition-all duration-200 ${
                       isActive
                         ? "border border-white bg-white text-black"
                         : "border border-transparent text-white/70 hover:bg-white/8 hover:text-white"

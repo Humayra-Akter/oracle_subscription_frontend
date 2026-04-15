@@ -195,9 +195,9 @@ export default function Login() {
         </section>
 
         <section className="flex items-center justify-center lg:justify-end">
-          <div className="w-full max-w-[420px] rounded-2xl border border-slate-700/70 bg-black/55 p-5 shadow-[0_8px_32px_rgba(0,0,0,0.45)] backdrop-blur-xl sm:p-6">
+          <div className="w-full max-w-[420px] rounded-xl border border-slate-700/70 bg-black/55 p-5 shadow-[0_8px_32px_rgba(0,0,0,0.45)] backdrop-blur-xl sm:p-6">
             <div className="mb-5 flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-700 bg-black/80 text-slate-200">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-700 bg-black/80 text-slate-200">
                 <ShieldCheck size={20} />
               </div>
               <div>
@@ -210,7 +210,7 @@ export default function Login() {
               </div>
             </div>
 
-            <div className="mb-5 grid grid-cols-2 rounded-2xl border border-slate-700 bg-black/80 p-1">
+            <div className="mb-5 grid grid-cols-2 rounded-xl border border-slate-700 bg-black/80 p-1">
               <button
                 type="button"
                 onClick={() => switchTab("login")}
@@ -236,13 +236,13 @@ export default function Login() {
             </div>
 
             {errorMsg && (
-              <div className="mb-4 rounded-2xl border border-red-400/20 bg-red-400/10 px-3.5 py-2.5 text-sm text-red-200">
+              <div className="mb-4 rounded-xl border border-red-400/20 bg-red-400/10 px-3.5 py-2.5 text-sm text-red-200">
                 {errorMsg}
               </div>
             )}
 
             {successMsg && (
-              <div className="mb-4 rounded-2xl border border-green-400/20 bg-green-400/10 px-3.5 py-2.5 text-sm text-green-200">
+              <div className="mb-4 rounded-xl border border-green-400/20 bg-green-400/10 px-3.5 py-2.5 text-sm text-green-200">
                 {successMsg}
               </div>
             )}
@@ -288,7 +288,7 @@ export default function Login() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="mt-1 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-200 px-5 py-3.5 text-sm font-semibold text-black transition hover:bg-slate-300 disabled:cursor-not-allowed disabled:opacity-70"
+                  className="mt-1 flex w-full items-center justify-center gap-2 rounded-xl bg-slate-200 px-5 py-3.5 text-sm font-semibold text-black transition hover:bg-slate-300 disabled:cursor-not-allowed disabled:opacity-70"
                 >
                   {loading ? "Signing in..." : "Sign in"}
                   {!loading && <ArrowRight size={17} />}
@@ -356,7 +356,7 @@ export default function Login() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="mt-1 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-200 px-5 py-3.5 text-sm font-semibold text-black transition hover:bg-slate-300 disabled:cursor-not-allowed disabled:opacity-70"
+                  className="mt-1 flex w-full items-center justify-center gap-2 rounded-xl bg-slate-200 px-5 py-3.5 text-sm font-semibold text-black transition hover:bg-slate-300 disabled:cursor-not-allowed disabled:opacity-70"
                 >
                   {loading ? "Creating account..." : "Create account"}
                   {!loading && <ArrowRight size={17} />}
@@ -364,7 +364,7 @@ export default function Login() {
               </form>
             )}
 
-            <div className="mt-5 rounded-2xl border border-slate-700 bg-black/60 px-4 py-3 text-xs leading-6 text-slate-500">
+            <div className="mt-5 rounded-xl border border-slate-700 bg-black/60 px-4 py-3 text-xs leading-6 text-slate-500">
               Access is restricted to approved organization users and monitored
               for compliance operations.
             </div>
@@ -411,7 +411,7 @@ function Field({ label, icon, type, name, value, onChange, placeholder }) {
       <label className="mb-1.5 block text-sm font-medium text-slate-300">
         {label}
       </label>
-      <div className="flex items-center gap-3 rounded-2xl border border-slate-700 bg-black/80 px-4 py-3 transition focus-within:border-white/20">
+      <div className="flex items-center gap-3 rounded-xl border border-slate-700 bg-black/80 px-4 py-3 transition focus-within:border-white/20">
         {icon}
         <input
           type={type}
@@ -441,7 +441,7 @@ function PasswordField({
       <label className="mb-1.5 block text-sm font-medium text-slate-300">
         {label}
       </label>
-      <div className="flex items-center gap-3 rounded-2xl border border-slate-700 bg-black/80 px-4 py-3 transition focus-within:border-white/20">
+      <div className="flex items-center gap-3 rounded-xl border border-slate-700 bg-black/80 px-4 py-3 transition focus-within:border-white/20">
         <Lock size={17} className="text-slate-500" />
         <input
           type={show ? "text" : "password"}
