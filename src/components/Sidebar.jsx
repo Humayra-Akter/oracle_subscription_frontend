@@ -51,7 +51,7 @@ export default function Sidebar({ collapsed, setCollapsed }) {
 
             {!collapsed && (
               <div className="min-w-0">
-                <p className="truncate text-[11px] uppercase tracking-[0.24em] text-white/45">
+                <p className="truncate text-xs uppercase tracking-[0.24em] text-white/45">
                   Oracle Platform
                 </p>
                 <h2 className="truncate text-lg font-semibold text-white">

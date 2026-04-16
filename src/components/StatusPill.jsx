@@ -19,7 +19,7 @@ export default function StatusPill({
   dot = false,
 }) {
   const sizes = {
-    sm: "px-2 py-1 text-[11px]",
+    sm: "px-2 py-1 text-xs",
     md: "px-2 py-1 text-xs",
     lg: "px-2 py-1 text-sm",
   };

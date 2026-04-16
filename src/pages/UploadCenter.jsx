@@ -412,7 +412,7 @@ export default function UploadCenter() {
 
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
               <div className="rounded-xl border border-zinc-800 bg-zinc-900/80 p-4">
-                <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-zinc-500">
+                <div className="text-xs font-bold uppercase tracking-[0.16em] text-zinc-500">
                   Accepted Formats
                 </div>
                 <p className="mt-2 text-sm font-semibold text-white">
@@ -421,7 +421,7 @@ export default function UploadCenter() {
               </div>
 
               <div className="rounded-xl border border-zinc-800 bg-zinc-900/80 p-4">
-                <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-zinc-500">
+                <div className="text-xs font-bold uppercase tracking-[0.16em] text-zinc-500">
                   Max Size
                 </div>
                 <p className="mt-2 text-sm font-semibold text-white">
@@ -430,7 +430,7 @@ export default function UploadCenter() {
               </div>
 
               <div className="rounded-xl border border-zinc-800 bg-zinc-900/80 p-4 sm:col-span-2">
-                <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-zinc-500">
+                <div className="text-xs font-bold uppercase tracking-[0.16em] text-zinc-500">
                   Best Practice
                 </div>
                 <p className="mt-2 text-sm leading-6 text-zinc-300">

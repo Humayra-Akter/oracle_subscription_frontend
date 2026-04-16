@@ -184,3 +184,40 @@ export const usersAnalysisApi = {
     return response?.data;
   },
 };
+
+
+// -------- Compliance -----------
+export const complianceApi = {
+  list: async (filters = {}, signal) => {
+    const query = toQueryString(filters);
+    const response = await apiRequest(`/compliance${query}`, {
+      method: "GET",
+      signal,
+    });
+
+    return (
+      response?.data || {
+        items: [],
+        stats: {},
+      }
+    );
+  },
+
+  getById: async (id, signal) => {
+    const response = await apiRequest(`/compliance/${id}`, {
+      method: "GET",
+      signal,
+    });
+
+    return response?.data;
+  },
+
+  summary: async (signal) => {
+    const response = await apiRequest(`/compliance/summary`, {
+      method: "GET",
+      signal,
+    });
+
+    return response?.data || {};
+  },
+};

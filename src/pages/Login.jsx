@@ -201,7 +201,7 @@ export default function Login() {
                 <ShieldCheck size={20} />
               </div>
               <div>
-                <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">
+                <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
                   Secure access
                 </p>
                 <h2 className="mt-0.5 text-2xl font-semibold tracking-[-0.02em] text-slate-100">

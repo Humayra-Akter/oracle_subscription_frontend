@@ -28,7 +28,7 @@ export default function DetailModal({
           <div className="sticky top-0 z-10 border-b border-zinc-200 bg-white/95 backdrop-blur">
             <div className="flex items-start justify-between gap-4 px-7 py-3">
               <div className="min-w-0">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
+                <p className="text-xs font-semibold uppercase  text-zinc-500">
                   Detailed Record
                 </p>
                 <h2 className="mt-2 text-2xl font-bold text-zinc-800">

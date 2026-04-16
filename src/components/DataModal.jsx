@@ -14,7 +14,7 @@ export default function DataModal({ open, title, onClose, children }) {
         <div className="mx-auto w-full max-w-4xl overflow-hidden rounded-xl border border-white/70 bg-white shadow-md">
           <div className="sticky top-0 z-10 flex items-center justify-between border-b border-zinc-200 bg-white/95 px-6 py-5 backdrop-blur">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-400">
+              <p className="text-xs font-semibold uppercase  text-zinc-400">
                 Detail View
               </p>
               <h2 className="mt-1 text-2xl font-bold tracking-tight text-zinc-950">

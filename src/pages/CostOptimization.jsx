@@ -759,9 +759,7 @@ export default function CostOptimization() {
 function SummaryBox({ label, value }) {
   return (
     <div className="rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-4">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
-        {label}
-      </p>
+      <p className="text-xs font-semibold uppercase  text-zinc-500">{label}</p>
       <p className="mt-2 text-base font-semibold text-zinc-950">{value}</p>
     </div>
   );

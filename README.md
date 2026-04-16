@@ -499,7 +499,15 @@ scheduled forecasting and renewal optimization
 
 src/
 components/
+DataModel.jsx
+DataTableShell.jsx
+DetailModel.jsx
+DetailSection.jsx
+ProtectedRoute.jsx
 Sidebar.jsx
+StatusCard.jsx
+StatusPill.jsx
+TablePagination.jsx
 layouts/
 AppLayout.jsx
 pages/
@@ -513,6 +521,9 @@ Reports.jsx
 Login.jsx
 App.jsx
 main.jsx
+utils/
+api.js
+ui.js
 
 oracle_subscription_backend/
 ├── prisma/

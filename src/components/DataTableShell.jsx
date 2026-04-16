@@ -13,7 +13,7 @@ export default function DataTableShell({
       <div className="border-b border-zinc-200 bg-[linear-gradient(180deg,#ffffff_0%,#fafafa_100%)] px-6 py-6">
         <div className="flex flex-col gap-5 2xl:flex-row 2xl:items-end 2xl:justify-between">
           <div className="min-w-0">
-            <div className="inline-flex rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
+            <div className="inline-flex rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-semibold uppercase text-zinc-500">
               Operational Grid
             </div>
 
