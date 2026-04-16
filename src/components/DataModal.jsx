@@ -11,7 +11,7 @@ export default function DataModal({ open, title, onClose, children }) {
       />
 
       <div className="absolute inset-0 overflow-y-auto p-4 md:p-8">
-        <div className="mx-auto w-full max-w-4xl overflow-hidden rounded-xl border border-white/70 bg-white shadow-[0_24px_80px_rgba(0,0,0,0.22)]">
+        <div className="mx-auto w-full max-w-4xl overflow-hidden rounded-xl border border-white/70 bg-white shadow-md">
           <div className="sticky top-0 z-10 flex items-center justify-between border-b border-zinc-200 bg-white/95 px-6 py-5 backdrop-blur">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-400">

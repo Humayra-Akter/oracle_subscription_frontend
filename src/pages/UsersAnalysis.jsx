@@ -375,12 +375,12 @@ export default function UsersAnalysis() {
         {selectedUser ? (
           <div className="space-y-5">
             <div className="grid gap-4 lg:grid-cols-4">
-              <div className="rounded-[24px] border border-zinc-200 bg-zinc-950 p-5 text-white shadow-[0_16px_40px_rgba(0,0,0,0.18)]">
+              <div className="rounded-xl border border-zinc-200 px-5 py-3 shadow-md">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-400">
+                  <span className="text-xs font-semibold uppercase text-zinc-800">
                     Activity
                   </span>
-                  <Activity size={16} className="text-zinc-300" />
+                  <Activity size={16} className="text-zinc-800" />
                 </div>
                 <div className="mt-4">
                   <StatusPill
@@ -391,21 +391,21 @@ export default function UsersAnalysis() {
                 </div>
               </div>
 
-              <div className="rounded-[24px] border border-zinc-200 bg-white p-5 shadow-sm">
+              <div className="rounded-xl border border-zinc-200 px-5 py-3 shadow-md">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-400">
+                  <span className="text-xs font-semibold uppercase text-zinc-800">
                     Roles
                   </span>
-                  <BriefcaseBusiness size={16} className="text-zinc-500" />
+                  <BriefcaseBusiness size={16} className="text-zinc-800" />
                 </div>
                 <p className="mt-4 text-3xl font-bold text-zinc-950">
                   {selectedUser.assignedRoles?.length || 0}
                 </p>
               </div>
 
-              <div className="rounded-[24px] border border-red-200 bg-red-50 p-5 shadow-sm">
+              <div className="rounded-xl border border-red-200 bg-red-50 px-5 py-3 shadow-md">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold uppercase tracking-[0.16em] text-red-400">
+                  <span className="text-xs font-semibold uppercase  text-red-400">
                     Risky Roles
                   </span>
                   <Shield size={16} className="text-red-500" />
@@ -415,8 +415,8 @@ export default function UsersAnalysis() {
                 </p>
               </div>
 
-              <div className="rounded-[24px] border border-zinc-200 bg-white p-5 shadow-sm">
-                <div className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-400">
+              <div className="rounded-xl border border-zinc-200 bg-white px-5 py-3 shadow-md">
+                <div className="text-xs font-semibold uppercase  text-zinc-800">
                   Monthly Cost
                 </div>
                 <p className="mt-4 text-3xl font-bold text-zinc-950">
@@ -506,7 +506,7 @@ export default function UsersAnalysis() {
                 />
               </DetailGrid>
 
-              <div className="mt-5 overflow-hidden rounded-[24px] border border-zinc-200 bg-white shadow-sm">
+              <div className="mt-5 overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
                 <div className="border-b border-zinc-200 px-3 py-4">
                   <h4 className="text-sm font-bold uppercase   text-zinc-500">
                     Assigned Roles

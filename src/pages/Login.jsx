@@ -24,8 +24,8 @@ export default function Login() {
   const [successMsg, setSuccessMsg] = useState("");
 
   const [loginData, setLoginData] = useState({
-    email: "admin@example.com",
-    password: "Admin@12345",
+    email: "admin@oracle.com",
+    password: "Admin@123",
   });
 
   const [registerData, setRegisterData] = useState({
@@ -195,7 +195,7 @@ export default function Login() {
         </section>
 
         <section className="flex items-center justify-center lg:justify-end">
-          <div className="w-full max-w-[420px] rounded-xl border border-slate-700/70 bg-black/55 p-5 shadow-[0_8px_32px_rgba(0,0,0,0.45)] backdrop-blur-xl sm:p-6">
+          <div className="w-full max-w-[420px] rounded-xl border border-slate-700/70 bg-black/55 p-5 shadow-md backdrop-blur-xl sm:p-6">
             <div className="mb-5 flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-700 bg-black/80 text-slate-200">
                 <ShieldCheck size={20} />

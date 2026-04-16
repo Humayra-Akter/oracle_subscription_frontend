@@ -389,12 +389,12 @@ export default function CostOptimization() {
           />
         </div>
 
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.55fr)_360px]">
+        <div className="space-y-6">
           <DataTableShell
             title="Ranked Cost Opportunities"
             subtitle="A table-first operating view of savings candidates, inactive users, and right-sizing opportunities."
             rightActions={
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
                   onClick={handleRefresh}
@@ -418,7 +418,7 @@ export default function CostOptimization() {
             }
             toolbar={
               <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_180px_180px]">
-                <div className="flex items-center gap-3 rounded-2xl border border-zinc-200 bg-white px-4 py-3">
+                <div className="flex items-center gap-3 rounded-xl border border-zinc-200 bg-white px-4 py-3">
                   <Search size={18} className="text-zinc-400" />
                   <input
                     value={search}
@@ -432,7 +432,7 @@ export default function CostOptimization() {
                   <select
                     value={riskFilter}
                     onChange={(e) => setRiskFilter(e.target.value)}
-                    className="h-[52px] w-full appearance-none rounded-2xl border border-zinc-200 bg-white px-4 pr-10 text-sm font-semibold text-zinc-700 outline-none"
+                    className="h-[52px] w-full appearance-none rounded-xl border border-zinc-200 bg-white px-4 pr-10 text-sm font-semibold text-zinc-700 outline-none"
                   >
                     <option value="All">Risk: All</option>
                     <option value="High">Risk: High</option>
@@ -449,7 +449,7 @@ export default function CostOptimization() {
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
-                    className="h-[52px] w-full appearance-none rounded-2xl border border-zinc-200 bg-white px-4 pr-10 text-sm font-semibold text-zinc-700 outline-none"
+                    className="h-[52px] w-full appearance-none rounded-xl border border-zinc-200 bg-white px-4 pr-10 text-sm font-semibold text-zinc-700 outline-none"
                   >
                     <option value="savings_desc">Sort: Highest savings</option>
                     <option value="cost_desc">Sort: Highest cost</option>
@@ -477,142 +477,144 @@ export default function CostOptimization() {
               />
             }
           >
-            <table className="min-w-full text-left">
-              <thead className="border-b border-zinc-200 bg-zinc-50/80">
-                <tr>
-                  <th className="px-6 py-4 text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">
-                    User / Service
-                  </th>
-                  <th className="px-6 py-4 text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">
-                    Department
-                  </th>
-                  <th className="px-6 py-4 text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">
-                    Opportunity
-                  </th>
-                  <th className="px-6 py-4 text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">
-                    License Cost
-                  </th>
-                  <th className="px-6 py-4 text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">
-                    Potential Savings
-                  </th>
-                  <th className="px-6 py-4 text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">
-                    Last Activity
-                  </th>
-                  <th className="px-6 py-4 text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">
-                    Risk
-                  </th>
-                  <th className="px-6 py-4 text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">
-                    Detail
-                  </th>
-                </tr>
-              </thead>
+            <div className="w-full overflow-x-auto">
+              <table className="w-full text-left">
+                <thead className="border-b border-zinc-200 bg-zinc-50/80">
+                  <tr>
+                    <th className="px-4 py-3 text-xs font-semibold uppercase text-center text-zinc-500">
+                      User / Service
+                    </th>
+                    <th className="px-4 py-3 text-xs font-semibold uppercase text-center text-zinc-500">
+                      Department
+                    </th>
+                    <th className="px-4 py-3 text-xs font-semibold uppercase text-center text-zinc-500">
+                      Opportunity
+                    </th>
+                    <th className="px-4 py-3 text-xs font-semibold uppercase text-center text-zinc-500">
+                      License Cost
+                    </th>
+                    <th className="px-4 py-3 text-xs font-semibold uppercase text-center text-zinc-500">
+                      Potential Savings
+                    </th>
+                    <th className="px-4 py-3 text-xs font-semibold uppercase text-center text-zinc-500">
+                      Last Activity
+                    </th>
+                    <th className="px-4 py-3 text-xs font-semibold uppercase text-center text-zinc-500">
+                      Risk
+                    </th>
+                    <th className="px-4 py-3 text-xs font-semibold uppercase text-center text-zinc-500">
+                      Detail
+                    </th>
+                  </tr>
+                </thead>
 
-              <tbody>
-                {loading ? (
-                  Array.from({ length: 8 }).map((_, i) => (
-                    <tr key={i} className="border-b border-zinc-100">
-                      <td colSpan={8} className="px-6 py-4">
-                        <div className="h-10 animate-pulse rounded-xl bg-zinc-100" />
+                <tbody>
+                  {loading ? (
+                    Array.from({ length: 8 }).map((_, i) => (
+                      <tr key={i} className="border-b border-zinc-100">
+                        <td colSpan={8} className="px-6 py-4">
+                          <div className="h-10 animate-pulse rounded-xl bg-zinc-100" />
+                        </td>
+                      </tr>
+                    ))
+                  ) : error ? (
+                    <tr>
+                      <td
+                        colSpan={8}
+                        className="px-6 py-12 text-center text-sm text-red-600"
+                      >
+                        {error}
                       </td>
                     </tr>
-                  ))
-                ) : error ? (
-                  <tr>
-                    <td
-                      colSpan={8}
-                      className="px-6 py-12 text-center text-sm text-red-600"
-                    >
-                      {error}
-                    </td>
-                  </tr>
-                ) : paginatedRows.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={8}
-                      className="px-6 py-12 text-center text-sm text-zinc-500"
-                    >
-                      No matching records found.
-                    </td>
-                  </tr>
-                ) : (
-                  paginatedRows.map((row) => (
-                    <tr
-                      key={row.id}
-                      className="border-b border-zinc-100 transition hover:bg-zinc-50/70"
-                    >
-                      <td className="px-6 py-4">
-                        <div className="min-w-[240px]">
-                          <p className="font-semibold text-zinc-950">
-                            {row.userName}
-                          </p>
-                          <p className="mt-1 text-sm text-zinc-500">
-                            {row.serviceName}
-                          </p>
-                        </div>
-                      </td>
-
-                      <td className="px-6 py-4 text-sm text-zinc-700">
-                        {row.department}
-                      </td>
-
-                      <td className="px-6 py-4">
-                        <div>
-                          <p className="text-sm font-medium text-zinc-900">
-                            {row.opportunityType}
-                          </p>
-                          <p className="mt-1 text-xs text-zinc-500">
-                            {row.usageScore !== null
-                              ? `Usage score ${row.usageScore}`
-                              : "Limited usage data"}
-                          </p>
-                        </div>
-                      </td>
-
-                      <td className="px-6 py-4 text-sm font-medium text-zinc-900">
-                        {formatCurrency(row.licenseCost)}
-                      </td>
-
-                      <td className="px-6 py-4 text-sm font-semibold text-zinc-950">
-                        {formatCurrency(row.potentialSavings)}
-                      </td>
-
-                      <td className="px-6 py-4 text-sm text-zinc-700">
-                        {row.inactiveDays !== null
-                          ? `${row.inactiveDays}d`
-                          : "-"}
-                      </td>
-
-                      <td className="px-6 py-4">
-                        <StatusPill
-                          value={row.risk}
-                          type={getRiskType(row.risk)}
-                          size="sm"
-                          dot
-                        />
-                      </td>
-
-                      <td className="px-6 py-4">
-                        <button
-                          type="button"
-                          onClick={() => setSelectedRow(row)}
-                          className="inline-flex h-10 items-center gap-2 rounded-xl border border-zinc-200 bg-white px-3 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-50"
-                        >
-                          <Eye size={15} />
-                          View
-                        </button>
+                  ) : paginatedRows.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={8}
+                        className="px-6 py-12 text-center text-sm text-zinc-500"
+                      >
+                        No matching records found.
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  ) : (
+                    paginatedRows.map((row) => (
+                      <tr
+                        key={row.id}
+                        className="border-b border-zinc-100 transition hover:bg-zinc-50/70"
+                      >
+                        <td className="px-6 py-4">
+                          <div>
+                            <p className="font-semibold text-zinc-950">
+                              {row.userName}
+                            </p>
+                            <p className="mt-1 text-sm text-zinc-500">
+                              {row.serviceName}
+                            </p>
+                          </div>
+                        </td>
+
+                        <td className="px-6 py-4 text-sm text-zinc-700">
+                          {row.department}
+                        </td>
+
+                        <td className="px-6 py-4">
+                          <div>
+                            <p className="text-sm font-medium text-zinc-900">
+                              {row.opportunityType}
+                            </p>
+                            <p className="mt-1 text-xs text-zinc-500">
+                              {row.usageScore !== null
+                                ? `Usage score ${row.usageScore}`
+                                : "Limited usage data"}
+                            </p>
+                          </div>
+                        </td>
+
+                        <td className="px-6 py-4 text-sm font-medium text-center text-zinc-900">
+                          {formatCurrency(row.licenseCost)}
+                        </td>
+
+                        <td className="px-6 py-4 text-sm font-semibold text-center text-zinc-950">
+                          {formatCurrency(row.potentialSavings)}
+                        </td>
+
+                        <td className="px-6 py-4 text-center text-sm text-zinc-700">
+                          {row.inactiveDays !== null
+                            ? `${row.inactiveDays}d`
+                            : "-"}
+                        </td>
+
+                        <td className="px-6 py-4">
+                          <StatusPill
+                            value={row.risk}
+                            type={getRiskType(row.risk)}
+                            size="sm"
+                            dot
+                          />
+                        </td>
+
+                        <td className="px-6 py-4">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedRow(row)}
+                            className="inline-flex items-center gap-2 rounded-xl border border-zinc-300 bg-white px-3 py-1 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 hover:shadow-md"
+                          >
+                            <Eye size={15} />
+                            View
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </DataTableShell>
 
-          <div className="space-y-4">
+          <div className="grid gap-4 lg:grid-cols-2">
             <div className="rounded-[28px] border border-zinc-200 bg-white p-5 shadow-[0_14px_40px_rgba(0,0,0,0.06)]">
               <div className="flex items-center gap-3">
-                <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-zinc-200 bg-zinc-50 text-zinc-700">
-                  <DollarSign size={18} />
+                <div className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-zinc-200 bg-zinc-50 text-zinc-700">
+                  <DollarSign size={15} />
                 </div>
                 <div>
                   <h3 className="text-lg font-bold tracking-tight text-zinc-950">
@@ -642,7 +644,7 @@ export default function CostOptimization() {
 
             <div className="rounded-[28px] border border-zinc-200 bg-white p-5 shadow-[0_14px_40px_rgba(0,0,0,0.06)]">
               <div className="flex items-center gap-3">
-                <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-zinc-200 bg-zinc-50 text-zinc-700">
+                <div className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-zinc-200 bg-zinc-50 text-zinc-700">
                   <Activity size={18} />
                 </div>
                 <div>
@@ -653,7 +655,7 @@ export default function CostOptimization() {
                 </div>
               </div>
 
-              <div className="mt-5 rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
+              <div className="mt-5 rounded-xl border border-zinc-200 bg-zinc-50 p-4">
                 <p className="text-sm leading-6 text-zinc-700">
                   {topRecord
                     ? `Start with ${topRecord.serviceName} under ${topRecord.department}. It currently shows the strongest recoverable spend signal and should be reviewed first before renewal or reassignment.`
@@ -756,7 +758,7 @@ export default function CostOptimization() {
 
 function SummaryBox({ label, value }) {
   return (
-    <div className="rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-4">
+    <div className="rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-4">
       <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
         {label}
       </p>

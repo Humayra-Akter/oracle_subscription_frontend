@@ -335,11 +335,11 @@ export default function UploadCenter() {
         </div>
       ) : null}
 
-      <div className="mt-6 rounded-[30px] border border-zinc-200 bg-white p-6 shadow-[0_14px_40px_rgba(0,0,0,0.06)]">
+      <div className="mt-6 rounded-xl border border-zinc-200 bg-white p-6 shadow-md">
         <div className="grid gap-6 xl:grid-cols-[1.1fr_1fr]">
-          <div className="rounded-[24px] border border-zinc-200 bg-[linear-gradient(180deg,#ffffff_0%,#fafafa_100%)] p-5">
+          <div className="rounded-xl border border-zinc-200 bg-[linear-gradient(180deg,#ffffff_0%,#fafafa_100%)] p-5 shadow-md">
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-zinc-200 bg-white shadow-sm">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-zinc-200 bg-white shadow-md">
                 <Inbox size={18} className="text-zinc-700" />
               </div>
               <div>
@@ -389,7 +389,7 @@ export default function UploadCenter() {
                 type="button"
                 onClick={() => inputRef.current?.click()}
                 disabled={uploading}
-                className="inline-flex h-12 items-center gap-2 rounded-xl bg-zinc-950 px-5 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(0,0,0,0.16)] transition hover:bg-black disabled:opacity-60"
+                className="inline-flex h-12 items-center gap-2 rounded-xl bg-zinc-950 px-5 text-sm font-semibold text-white shadow-md transition hover:bg-black disabled:opacity-60"
               >
                 <Upload size={16} />
                 {uploading ? "Uploading..." : "Choose Files"}
@@ -397,7 +397,7 @@ export default function UploadCenter() {
             </div>
           </div>
 
-          <div className="rounded-[24px] border border-zinc-200 bg-zinc-950 p-5 text-white shadow-[0_16px_40px_rgba(0,0,0,0.18)]">
+          <div className="rounded-xl border border-zinc-200 bg-zinc-950 p-5 text-white shadow-md">
             <div className="flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-zinc-800 bg-zinc-900">
                 <ShieldCheck size={18} className="text-zinc-200" />

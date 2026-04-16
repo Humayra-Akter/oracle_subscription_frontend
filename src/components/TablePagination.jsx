@@ -60,7 +60,7 @@ export default function TablePagination({
             className={cn(
               "inline-flex h-10 min-w-10 items-center justify-center rounded-xl border px-3 text-sm font-semibold transition",
               p === page
-                ? "border-black bg-black text-white shadow-[0_8px_20px_rgba(0,0,0,0.15)]"
+                ? "border-black bg-black text-white shadow-md"
                 : "border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50",
             )}
           >

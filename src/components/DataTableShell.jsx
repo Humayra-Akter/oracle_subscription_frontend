@@ -9,7 +9,7 @@ export default function DataTableShell({
   rightActions,
 }) {
   return (
-    <section className="overflow-hidden rounded-[28px] border border-zinc-200 bg-white shadow-[0_14px_40px_rgba(0,0,0,0.06)]">
+    <section className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-md">
       <div className="border-b border-zinc-200 bg-[linear-gradient(180deg,#ffffff_0%,#fafafa_100%)] px-6 py-6">
         <div className="flex flex-col gap-5 2xl:flex-row 2xl:items-end 2xl:justify-between">
           <div className="min-w-0">
