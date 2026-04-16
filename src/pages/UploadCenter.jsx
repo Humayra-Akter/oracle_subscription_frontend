@@ -389,7 +389,7 @@ export default function UploadCenter() {
                 type="button"
                 onClick={() => inputRef.current?.click()}
                 disabled={uploading}
-                className="inline-flex h-12 items-center gap-2 rounded-xl bg-zinc-950 px-5 text-sm font-semibold text-white shadow-md transition hover:bg-black disabled:opacity-60"
+                className="inline-flex h-12 items-center gap-2 rounded-xl bg-slate-950 px-5 text-sm font-semibold text-white shadow-md transition hover:bg-black disabled:opacity-60"
               >
                 <Upload size={16} />
                 {uploading ? "Uploading..." : "Choose Files"}
@@ -397,9 +397,9 @@ export default function UploadCenter() {
             </div>
           </div>
 
-          <div className="rounded-xl border border-zinc-200 bg-zinc-950 p-5 text-white shadow-md">
+          <div className="rounded-xl border border-zinc-200 bg-slate-950 p-5 text-white shadow-md">
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-zinc-800 bg-zinc-900">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-zinc-800 bg-slate-900">
                 <ShieldCheck size={18} className="text-zinc-200" />
               </div>
               <div>
@@ -411,7 +411,7 @@ export default function UploadCenter() {
             </div>
 
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
-              <div className="rounded-xl border border-zinc-800 bg-zinc-900/80 p-4">
+              <div className="rounded-xl border border-zinc-800 bg-slate-900/80 p-4">
                 <div className="text-xs font-bold uppercase tracking-[0.16em] text-zinc-500">
                   Accepted Formats
                 </div>
@@ -420,7 +420,7 @@ export default function UploadCenter() {
                 </p>
               </div>
 
-              <div className="rounded-xl border border-zinc-800 bg-zinc-900/80 p-4">
+              <div className="rounded-xl border border-zinc-800 bg-slate-900/80 p-4">
                 <div className="text-xs font-bold uppercase tracking-[0.16em] text-zinc-500">
                   Max Size
                 </div>
@@ -429,7 +429,7 @@ export default function UploadCenter() {
                 </p>
               </div>
 
-              <div className="rounded-xl border border-zinc-800 bg-zinc-900/80 p-4 sm:col-span-2">
+              <div className="rounded-xl border border-zinc-800 bg-slate-900/80 p-4 sm:col-span-2">
                 <div className="text-xs font-bold uppercase tracking-[0.16em] text-zinc-500">
                   Best Practice
                 </div>
@@ -451,7 +451,7 @@ export default function UploadCenter() {
           footer={footer}
         >
           <table className="min-w-full text-left">
-            <thead className="border-b border-zinc-200 bg-zinc-50/90">
+            <thead className="border-b border-zinc-200 bg-slate-50/90">
               <tr>
                 <th className="px-4 py-3 text-xs font-bold uppercase text-zinc-500 text-center">
                   File
@@ -500,7 +500,7 @@ export default function UploadCenter() {
                 paginatedQueue.map((item) => (
                   <tr
                     key={item.id}
-                    className="border-b border-zinc-100 transition hover:bg-zinc-50/80"
+                    className="border-b border-zinc-100 transition hover:bg-slate-50/80"
                   >
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-3">
@@ -550,7 +550,7 @@ export default function UploadCenter() {
                         <button
                           type="button"
                           onClick={() => setSelectedRow(item)}
-                          className="inline-flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-2 py-1 text-sm font-semibold text-zinc-800 shadow-sm transition hover:bg-zinc-50"
+                          className="inline-flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-2 py-1 text-sm font-semibold text-zinc-800 shadow-sm transition hover:bg-slate-50"
                         >
                           <Eye size={15} />
                           View
@@ -561,7 +561,7 @@ export default function UploadCenter() {
                             type="button"
                             disabled={busyId === item.id}
                             onClick={() => handleRetry(item.id)}
-                            className="inline-flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-2 py-1 text-sm font-semibold text-zinc-800 shadow-sm transition hover:bg-zinc-50 disabled:opacity-50"
+                            className="inline-flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-2 py-1 text-sm font-semibold text-zinc-800 shadow-sm transition hover:bg-slate-50 disabled:opacity-50"
                           >
                             <RotateCcw size={15} />
                             Retry

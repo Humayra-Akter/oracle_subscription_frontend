@@ -1,3 +1,5 @@
+import { Outlet, NavLink, useLocation } from "react-router-dom";
+import { useEffect, useState } from "react";
 import {
   LayoutDashboard,
   UploadCloud,
@@ -7,155 +9,303 @@ import {
   ShieldAlert,
   FileText,
   LogOut,
-  PanelLeftClose,
-  PanelLeftOpen,
+  ChevronLeft,
+  ChevronRight,
   ShieldCheck,
+  FolderOpen,
+  BarChart3,
 } from "lucide-react";
-import { NavLink } from "react-router-dom";
 
-const navItems = [
-  { label: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
-  { label: "Upload Center", path: "/upload-center", icon: UploadCloud },
-  { label: "Imports History", path: "/imports-history", icon: History },
-  { label: "Users Analysis", path: "/users-analysis", icon: Users },
-  {
-    label: "Cost Optimization",
-    path: "/cost-optimization",
-    icon: BadgeDollarSign,
-  },
-  { label: "Compliance", path: "/compliance", icon: ShieldAlert },
-  { label: "Reports", path: "/reports", icon: FileText },
-];
-
-export default function Sidebar({ collapsed, setCollapsed }) {
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
-
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    window.location.href = "/";
-  };
+function SidebarItem({
+  to,
+  icon: Icon,
+  label,
+  collapsed,
+  exact = false,
+  matchPrefix = false,
+  pathname,
+}) {
+  const isActive = exact
+    ? pathname === to
+    : matchPrefix
+      ? pathname === to || pathname.startsWith(to + "/")
+      : pathname.startsWith(to);
 
   return (
-    <aside
-      className={`hidden min-h-screen shrink-0 border-r border-neutral-800 bg-black lg:flex lg:flex-col transition-all duration-300 ${
-        collapsed ? "w-24" : "w-72"
-      }`}
+    <NavLink
+      to={to}
+      end={exact}
+      title={collapsed ? label : undefined}
+      className={() =>
+        [
+          "group relative flex items-center gap-2 rounded-xl px-3 py-1 text-sm font-medium transition-all duration-200",
+          collapsed ? "justify-center" : "",
+          isActive
+            ? "bg-indigo-500/10 text-indigo-700 ring-1 ring-inset ring-indigo-400/20"
+            : "hover:bg-indigo-500/10 hover:text-indigo-700",
+        ].join(" ")
+      }
     >
-      <div className="flex h-full flex-col">
-        <div className="flex items-center justify-between px-4 py-5">
-          <div className="flex items-center gap-3 overflow-hidden">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-white/15 bg-white text-black">
-              <ShieldCheck size={22} />
-            </div>
+      <span
+        className={[
+          "absolute left-1 top-1/2 h-6 w-1 -translate-y-1/2 rounded-full transition-all duration-200",
+          isActive ? "bg-indigo-700" : "bg-indigo-400 opacity-0",
+        ].join(" ")}
+      />
 
-            {!collapsed && (
-              <div className="min-w-0">
-                <p className="truncate text-xs uppercase tracking-[0.24em] text-white/45">
-                  Oracle Platform
-                </p>
-                <h2 className="truncate text-lg font-semibold text-white">
-                  Compliance Suite
-                </h2>
-              </div>
-            )}
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setCollapsed(!collapsed)}
-            className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/70 transition hover:bg-white/10 hover:text-white"
-          >
-            {collapsed ? (
-              <PanelLeftOpen size={18} />
-            ) : (
-              <PanelLeftClose size={18} />
-            )}
-          </button>
-        </div>
-
-        <div className="px-3 pb-4">
-          <div className="rounded-xl border border-white/10 bg-white/5 p-3">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white text-black">
-                <ShieldCheck size={18} />
-              </div>
-
-              {!collapsed && (
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-white">
-                    {user?.name || "System Admin"}
-                  </p>
-                  <p className="truncate text-xs text-white/45">
-                    {user?.email || "admin@example.com"}
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <nav className="flex-1 px-3 pb-2">
-          <div className="space-y-1.5">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-
-              return (
-                <NavLink
-                  key={item.path}
-                  to={item.path}
-                  className={({ isActive }) =>
-                    `group flex items-center gap-3 rounded-xl px-3 py-1 transition-all duration-200 ${
-                      isActive
-                        ? "border border-white bg-white text-black"
-                        : "border border-transparent text-white/70 hover:bg-white/8 hover:text-white"
-                    }`
-                  }
-                >
-                  {({ isActive }) => (
-                    <>
-                      <div
-                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition ${
-                          isActive
-                            ? "border-black/10 bg-black text-white"
-                            : "border-white/10 bg-white/5 text-white/70 group-hover:text-white"
-                        }`}
-                      >
-                        <Icon size={18} />
-                      </div>
-
-                      {!collapsed && (
-                        <div className="min-w-0 flex-1">
-                          <span className="block truncate text-sm font-medium">
-                            {item.label}
-                          </span>
-                        </div>
-                      )}
-
-                      {isActive && !collapsed && (
-                        <div className="h-2.5 w-2.5 rounded-full bg-black" />
-                      )}
-                    </>
-                  )}
-                </NavLink>
-              );
-            })}
-          </div>
-        </nav>
-
-        <div className="px-3 pb-5 pt-2">
-          <button
-            onClick={handleLogout}
-            className="flex w-full items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-white transition hover:bg-white/10"
-          >
-            <div className="flex h-5 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-black text-white">
-              <LogOut size={18} />
-            </div>
-
-            {!collapsed && <span className="text-sm font-medium">Logout</span>}
-          </button>
-        </div>
+      <div
+        className={[
+          "flex h-7 w-7 shrink-0 items-center justify-center border transition-all duration-200",
+          isActive
+            ? "border-indigo-50 rounded-full text-indigo-900"
+            : "border-white/5 bg-indigo-500/10 rounded-full text-indigo-900 group-hover:border-indigo-500/10 group-hover:bg-indigo-500/10 group-hover:text-indigo-800",
+        ].join(" ")}
+      >
+        <Icon className="h-4.5 w-4.5" />
       </div>
-    </aside>
+
+      {!collapsed ? <span className="truncate">{label}</span> : null}
+    </NavLink>
+  );
+}
+
+export default function ComplianceLayout() {
+  const { pathname } = useLocation();
+  const [collapsed, setCollapsed] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("oracle.sidebarCollapsed");
+    if (saved === "1") setCollapsed(true);
+    if (saved === "0") setCollapsed(false);
+  }, []);
+
+  function toggleSidebar() {
+    setCollapsed((v) => {
+      const next = !v;
+      localStorage.setItem("oracle.sidebarCollapsed", next ? "1" : "0");
+      return next;
+    });
+  }
+
+  const pageTitle = pathname.startsWith("/upload-center")
+    ? "Upload Center"
+    : pathname.startsWith("/imports-history")
+      ? "Imports History"
+      : pathname.startsWith("/users-analysis")
+        ? "Users Analysis"
+        : pathname.startsWith("/cost-optimization")
+          ? "Cost Optimization"
+          : pathname.startsWith("/compliance")
+            ? "Compliance Monitoring"
+            : pathname.startsWith("/reports")
+              ? "Reports"
+              : "Compliance Dashboard";
+
+  const sidebarW = collapsed ? "w-20" : "w-64";
+  const mainPad = collapsed ? "lg:pl-20" : "lg:pl-64";
+
+  return (
+    <div className="min-h-screen text-slate-900">
+      <div className="flex min-h-screen">
+        {/* Sidebar */}
+        <aside className="hidden lg:block">
+          <div
+            className={[
+              "fixed left-0 top-0 h-screen border-r border-white shadow-2xl",
+              sidebarW,
+              "transition-all duration-200",
+            ].join(" ")}
+          >
+            {/* Brand */}
+            <div className="border-b border-white/5 p-4">
+              <div className="flex items-start justify-between">
+                {!collapsed ? (
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <div className="min-w-0">
+                        <div className="font-bold text-lg leading-tight text-indigo-700">
+                          Compliance Suite
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-xs mt-2 italic font-bold text-slate-500">
+                      Oracle Subscription Optimization Platform
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    className="grid h-7 w-7 place-items-center rounded-full border border-indigo-400/20 bg-indigo-500/10 text-indigo-800"
+                    title="Oracle Compliance Suite"
+                  >
+                    <ShieldCheck className="h-5 w-5" />
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={toggleSidebar}
+                  className={[
+                    "shrink-0 inline-flex items-center justify-center border border-white/10 bg-slate-200 rounded-full text-indigo-700 hover:bg-slate-200 hover:text-black",
+                    "transition-all duration-200",
+                  ].join(" ")}
+                  title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+                >
+                  {collapsed ? (
+                    <ChevronRight className="h-6 w-6" />
+                  ) : (
+                    <ChevronLeft className="h-6 w-6" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Menu */}
+            <div className="h-[calc(100vh-96px)] overflow-y-auto p-3">
+              <nav className="space-y-2">
+                {!collapsed ? (
+                  <div className="px-2 text-[11px] font-semibold uppercase text-slate-500">
+                    Overview
+                  </div>
+                ) : (
+                  <div className="h-2" />
+                )}
+
+                <SidebarItem
+                  to="/dashboard"
+                  icon={LayoutDashboard}
+                  label="Dashboard"
+                  collapsed={collapsed}
+                  exact
+                  pathname={pathname}
+                />
+
+                {!collapsed ? (
+                  <div className="px-2 pt-2 text-[11px] font-semibold uppercase text-slate-500">
+                    Data Operations
+                  </div>
+                ) : (
+                  <div className="h-2" />
+                )}
+
+                <SidebarItem
+                  to="/upload-center"
+                  icon={UploadCloud}
+                  label="Upload Center"
+                  collapsed={collapsed}
+                  pathname={pathname}
+                  matchPrefix
+                />
+                <SidebarItem
+                  to="/imports-history"
+                  icon={History}
+                  label="Imports History"
+                  collapsed={collapsed}
+                  pathname={pathname}
+                  matchPrefix
+                />
+
+                {!collapsed ? (
+                  <div className="px-2 pt-2 text-[11px] font-semibold uppercase text-slate-500">
+                    Analysis
+                  </div>
+                ) : (
+                  <div className="h-2" />
+                )}
+
+                <SidebarItem
+                  to="/users-analysis"
+                  icon={Users}
+                  label="Users Analysis"
+                  collapsed={collapsed}
+                  pathname={pathname}
+                  matchPrefix
+                />
+                <SidebarItem
+                  to="/cost-optimization"
+                  icon={BadgeDollarSign}
+                  label="Cost Optimization"
+                  collapsed={collapsed}
+                  pathname={pathname}
+                  matchPrefix
+                />
+                <SidebarItem
+                  to="/compliance"
+                  icon={ShieldAlert}
+                  label="Compliance"
+                  collapsed={collapsed}
+                  pathname={pathname}
+                  matchPrefix
+                />
+                <SidebarItem
+                  to="/reports"
+                  icon={FileText}
+                  label="Reports"
+                  collapsed={collapsed}
+                  pathname={pathname}
+                  matchPrefix
+                />
+
+                {!collapsed ? (
+                  <div className="px-2 pt-2 text-[11px] font-semibold uppercase text-slate-500">
+                    Intelligence
+                  </div>
+                ) : (
+                  <div className="h-2" />
+                )}
+
+                <SidebarItem
+                  to="/insights"
+                  icon={BarChart3}
+                  label="Insights"
+                  collapsed={collapsed}
+                  pathname={pathname}
+                  matchPrefix
+                />
+                <SidebarItem
+                  to="/evidence"
+                  icon={FolderOpen}
+                  label="Evidence Vault"
+                  collapsed={collapsed}
+                  pathname={pathname}
+                  matchPrefix
+                />
+                <hr className="opacity-20 pt-1" />
+                {/* Logout */}
+                <div>
+                  <button
+                    onClick={() => {
+                      localStorage.removeItem("token");
+                      localStorage.removeItem("user");
+                      window.location.href = "/";
+                    }}
+                    className={[
+                      "flex w-full items-center gap-2 rounded-xl px-3 py-1",
+                      "text-sm font-medium text-slate-800 transition-all",
+                      "hover:bg-red-500/10 hover:text-red-700",
+                      collapsed ? "justify-center" : "",
+                    ].join(" ")}
+                    title={collapsed ? "Logout" : undefined}
+                  >
+                    <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/5 bg-red-500/10 text-red-700">
+                      <LogOut className="h-4.5 w-4.5" />
+                    </div>
+                    {!collapsed ? <span>Logout</span> : null}
+                  </button>
+                </div>
+
+                <div className="h-4" />
+              </nav>
+            </div>
+          </div>
+        </aside>
+
+        {/* Main */}
+        <main className={["flex-1", mainPad].join(" ")}>
+          <div>
+            <Outlet />
+          </div>
+        </main>
+      </div>
+    </div>
   );
 }

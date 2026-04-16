@@ -245,7 +245,7 @@ export default function UsersAnalysis() {
           footer={footer}
         >
           <table className="min-w-full">
-            <thead className="border-b border-zinc-200 bg-zinc-100">
+            <thead className="border-b border-zinc-200 bg-slate-100">
               <tr>
                 <th className="px-6 py-2 text-xs font-bold uppercase text-center text-zinc-500">
                   Identity
@@ -294,7 +294,7 @@ export default function UsersAnalysis() {
                 paginatedUsers.map((user) => (
                   <tr
                     key={user.id}
-                    className="border-b border-zinc-100 transition hover:bg-zinc-50/80"
+                    className="border-b border-zinc-100 transition hover:bg-slate-50/80"
                   >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
@@ -351,7 +351,7 @@ export default function UsersAnalysis() {
                       <button
                         type="button"
                         onClick={() => setSelectedUser(user)}
-                        className="inline-flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-2 py-1 text-sm font-semibold text-zinc-800 shadow-sm transition hover:bg-zinc-50"
+                        className="inline-flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-2 py-1 text-sm font-semibold text-zinc-800 shadow-sm transition hover:bg-slate-50"
                       >
                         <Eye size={15} />
                         View
@@ -515,7 +515,7 @@ export default function UsersAnalysis() {
 
                 <div className="overflow-x-auto">
                   <table className="min-w-full text-left">
-                    <thead className="bg-zinc-50/90">
+                    <thead className="bg-slate-50/90">
                       <tr>
                         <th className="px-3 py-2 text-xs font-bold uppercase   text-zinc-500">
                           Role Name

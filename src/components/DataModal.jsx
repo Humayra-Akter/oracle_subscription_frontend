@@ -25,7 +25,7 @@ export default function DataModal({ open, title, onClose, children }) {
             <button
               type="button"
               onClick={onClose}
-              className="inline-flex h-12 w-12 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-700 transition hover:bg-zinc-50"
+              className="inline-flex h-12 w-12 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-700 transition hover:bg-slate-50"
             >
               <X size={20} />
             </button>

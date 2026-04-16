@@ -9,8 +9,9 @@ import { cn } from "../utils/ui";
 
 const cardTone = {
   default: {
-    shell: "border-zinc-200/80 bg-gradient-to-br from-zinc-100 to-slate-200 shadow-md",
-    badge: "bg-zinc-100 text-zinc-700 border-zinc-200",
+    shell:
+      "border-zinc-200/80 bg-gradient-to-br from-zinc-100 to-slate-200 shadow-md",
+    badge: "bg-slate-100 text-zinc-700 border-zinc-200",
     title: "text-zinc-600",
     value: "text-zinc-800",
     subtitle: "text-zinc-600",

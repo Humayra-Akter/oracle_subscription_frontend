@@ -34,7 +34,7 @@ export default function TablePagination({
           type="button"
           onClick={() => onPageChange(page - 1)}
           disabled={page <= 1}
-          className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-700 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40"
+          className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
         >
           <ChevronLeft size={16} />
         </button>
@@ -44,7 +44,7 @@ export default function TablePagination({
             <button
               type="button"
               onClick={() => onPageChange(1)}
-              className="inline-flex h-10 min-w-10 items-center justify-center rounded-xl border border-zinc-200 bg-white px-3 text-sm font-semibold text-zinc-700 hover:bg-zinc-50"
+              className="inline-flex h-10 min-w-10 items-center justify-center rounded-xl border border-zinc-200 bg-white px-3 text-sm font-semibold text-zinc-700 hover:bg-slate-50"
             >
               1
             </button>
@@ -61,7 +61,7 @@ export default function TablePagination({
               "inline-flex h-10 min-w-10 items-center justify-center rounded-xl border px-3 text-sm font-semibold transition",
               p === page
                 ? "border-black bg-black text-white shadow-md"
-                : "border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50",
+                : "border-zinc-200 bg-white text-zinc-700 hover:bg-slate-50",
             )}
           >
             {p}
@@ -76,7 +76,7 @@ export default function TablePagination({
             <button
               type="button"
               onClick={() => onPageChange(safeTotalPages)}
-              className="inline-flex h-10 min-w-10 items-center justify-center rounded-xl border border-zinc-200 bg-white px-3 text-sm font-semibold text-zinc-700 hover:bg-zinc-50"
+              className="inline-flex h-10 min-w-10 items-center justify-center rounded-xl border border-zinc-200 bg-white px-3 text-sm font-semibold text-zinc-700 hover:bg-slate-50"
             >
               {safeTotalPages}
             </button>
@@ -87,7 +87,7 @@ export default function TablePagination({
           type="button"
           onClick={() => onPageChange(page + 1)}
           disabled={page >= safeTotalPages}
-          className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-700 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40"
+          className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
         >
           <ChevronRight size={16} />
         </button>

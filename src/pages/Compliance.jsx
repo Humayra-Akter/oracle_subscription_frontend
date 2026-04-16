@@ -349,7 +349,7 @@ export default function Compliance() {
               <button
                 type="button"
                 onClick={() => loadCompliance({ isRefresh: true })}
-                className="inline-flex h-11 items-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-50"
+                className="inline-flex h-11 items-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-700 transition hover:bg-slate-50"
               >
                 <RefreshCw
                   size={16}
@@ -360,7 +360,7 @@ export default function Compliance() {
 
               <button
                 type="button"
-                className="inline-flex h-11 items-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-50"
+                className="inline-flex h-11 items-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-700 transition hover:bg-slate-50"
               >
                 <Download size={16} />
                 Export
@@ -370,7 +370,7 @@ export default function Compliance() {
         >
           <div className="w-full overflow-x-auto">
             <table className="w-full">
-              <thead className="border-b border-zinc-200 bg-zinc-100">
+              <thead className="border-b border-zinc-200 bg-slate-100">
                 <tr>
                   <th className="px-6 py-3 text-xs font-bold uppercase text-center text-zinc-500">
                     User
@@ -422,7 +422,7 @@ export default function Compliance() {
                   paginatedRecords.map((record) => (
                     <tr
                       key={record.id}
-                      className="border-b border-zinc-100 transition hover:bg-zinc-50/80"
+                      className="border-b border-zinc-100 transition hover:bg-slate-50/80"
                     >
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
@@ -506,7 +506,7 @@ export default function Compliance() {
                         <button
                           type="button"
                           onClick={() => setSelectedRecord(record)}
-                          className="inline-flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm font-semibold text-zinc-800 shadow-sm transition hover:bg-zinc-50"
+                          className="inline-flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm font-semibold text-zinc-800 shadow-sm transition hover:bg-slate-50"
                         >
                           <Eye size={15} />
                           View
@@ -712,7 +712,7 @@ export default function Compliance() {
                   />
                 </DetailGrid>
 
-                <div className="mt-5 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-4">
+                <div className="mt-5 rounded-xl border border-zinc-200 bg-slate-50 px-4 py-4">
                   <p className="text-xs font-bold uppercase text-zinc-500">
                     Reason Summary
                   </p>
@@ -745,7 +745,7 @@ function SummaryCard({ icon, title, value, subtitle }) {
     <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-md">
       <div className="flex items-center justify-between">
         <p className="text-sm font-bold uppercase text-zinc-500">{title}</p>
-        <div className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-zinc-200 bg-zinc-50 text-zinc-700">
+        <div className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-zinc-200 bg-slate-50 text-zinc-700">
           {icon}
         </div>
       </div>

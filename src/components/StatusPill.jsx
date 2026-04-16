@@ -8,8 +8,8 @@ const tones = {
   error: "border-red-200/80 bg-red-50 text-red-700 shadow-sm shadow-red-100/60",
   info: "border-sky-200/80 bg-sky-50 text-sky-700 shadow-sm shadow-sky-100/60",
   neutral:
-    "border-zinc-200 bg-zinc-50 text-zinc-700 shadow-sm shadow-zinc-100/70",
-  dark: "border-zinc-800 bg-zinc-950 text-white shadow-sm shadow-black/20",
+    "border-zinc-200 bg-slate-50 text-zinc-700 shadow-sm shadow-zinc-100/70",
+  dark: "border-zinc-800 bg-slate-950 text-white shadow-sm shadow-black/20",
 };
 
 export default function StatusPill({

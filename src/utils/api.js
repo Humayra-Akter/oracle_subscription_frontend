@@ -221,3 +221,59 @@ export const complianceApi = {
     return response?.data || {};
   },
 };
+
+// -------- Reports -----------
+export const reportsApi = {
+  dashboard: async (signal) => {
+    const response = await apiRequest("/reports", {
+      method: "GET",
+      signal,
+    });
+
+    return response?.data || {
+      summary: {},
+      reportOptions: [],
+      preview: {
+        flaggedUsers: [],
+        savings: [],
+      },
+    };
+  },
+
+  preview: async (reportType, signal) => {
+    const response = await apiRequest(`/reports/${reportType}`, {
+      method: "GET",
+      signal,
+    });
+
+    return response?.data || {
+      fileName: "",
+      rows: [],
+    };
+  },
+
+  exportCsv: async (reportType) => {
+    const token = localStorage.getItem("token");
+
+    const response = await fetch(
+      `${API_BASE_URL}/reports/${reportType}/export`,
+      {
+        method: "GET",
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      },
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to export report.");
+    }
+
+    const blob = await response.blob();
+    const contentDisposition = response.headers.get("content-disposition") || "";
+    const match = contentDisposition.match(/filename="(.+)"/);
+    const fileName = match?.[1] || `${reportType}-report.csv`;
+
+    return { blob, fileName };
+  },
+};

@@ -398,7 +398,7 @@ export default function CostOptimization() {
                 <button
                   type="button"
                   onClick={handleRefresh}
-                  className="inline-flex h-11 items-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-50"
+                  className="inline-flex h-11 items-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-700 transition hover:bg-slate-50"
                 >
                   <RefreshCw
                     size={16}
@@ -409,7 +409,7 @@ export default function CostOptimization() {
 
                 <button
                   type="button"
-                  className="inline-flex h-11 items-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-50"
+                  className="inline-flex h-11 items-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-700 transition hover:bg-slate-50"
                 >
                   <Download size={16} />
                   Export
@@ -479,7 +479,7 @@ export default function CostOptimization() {
           >
             <div className="w-full overflow-x-auto">
               <table className="w-full text-left">
-                <thead className="border-b border-zinc-200 bg-zinc-50/80">
+                <thead className="border-b border-zinc-200 bg-slate-50/80">
                   <tr>
                     <th className="px-4 py-3 text-xs font-semibold uppercase text-center text-zinc-500">
                       User / Service
@@ -513,7 +513,7 @@ export default function CostOptimization() {
                     Array.from({ length: 8 }).map((_, i) => (
                       <tr key={i} className="border-b border-zinc-100">
                         <td colSpan={8} className="px-6 py-4">
-                          <div className="h-10 animate-pulse rounded-xl bg-zinc-100" />
+                          <div className="h-10 animate-pulse rounded-xl bg-slate-100" />
                         </td>
                       </tr>
                     ))
@@ -539,7 +539,7 @@ export default function CostOptimization() {
                     paginatedRows.map((row) => (
                       <tr
                         key={row.id}
-                        className="border-b border-zinc-100 transition hover:bg-zinc-50/70"
+                        className="border-b border-zinc-100 transition hover:bg-slate-50/70"
                       >
                         <td className="px-6 py-4">
                           <div>
@@ -596,7 +596,7 @@ export default function CostOptimization() {
                           <button
                             type="button"
                             onClick={() => setSelectedRow(row)}
-                            className="inline-flex items-center gap-2 rounded-xl border border-zinc-300 bg-white px-3 py-1 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 hover:shadow-md"
+                            className="inline-flex items-center gap-2 rounded-xl border border-zinc-300 bg-white px-3 py-1 text-sm font-semibold text-zinc-700 transition hover:bg-slate-100 hover:shadow-md"
                           >
                             <Eye size={15} />
                             View
@@ -613,7 +613,7 @@ export default function CostOptimization() {
           <div className="grid gap-4 lg:grid-cols-2">
             <div className="rounded-[28px] border border-zinc-200 bg-white p-5 shadow-[0_14px_40px_rgba(0,0,0,0.06)]">
               <div className="flex items-center gap-3">
-                <div className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-zinc-200 bg-zinc-50 text-zinc-700">
+                <div className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-zinc-200 bg-slate-50 text-zinc-700">
                   <DollarSign size={15} />
                 </div>
                 <div>
@@ -644,7 +644,7 @@ export default function CostOptimization() {
 
             <div className="rounded-[28px] border border-zinc-200 bg-white p-5 shadow-[0_14px_40px_rgba(0,0,0,0.06)]">
               <div className="flex items-center gap-3">
-                <div className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-zinc-200 bg-zinc-50 text-zinc-700">
+                <div className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-zinc-200 bg-slate-50 text-zinc-700">
                   <Activity size={18} />
                 </div>
                 <div>
@@ -655,7 +655,7 @@ export default function CostOptimization() {
                 </div>
               </div>
 
-              <div className="mt-5 rounded-xl border border-zinc-200 bg-zinc-50 p-4">
+              <div className="mt-5 rounded-xl border border-zinc-200 bg-slate-50 p-4">
                 <p className="text-sm leading-6 text-zinc-700">
                   {topRecord
                     ? `Start with ${topRecord.serviceName} under ${topRecord.department}. It currently shows the strongest recoverable spend signal and should be reviewed first before renewal or reassignment.`
@@ -758,7 +758,7 @@ export default function CostOptimization() {
 
 function SummaryBox({ label, value }) {
   return (
-    <div className="rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-4">
+    <div className="rounded-xl border border-zinc-200 bg-slate-50 px-4 py-4">
       <p className="text-xs font-semibold uppercase  text-zinc-500">{label}</p>
       <p className="mt-2 text-base font-semibold text-zinc-950">{value}</p>
     </div>
