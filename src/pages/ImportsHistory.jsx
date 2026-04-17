@@ -148,7 +148,7 @@ function Toast({ toast, onClose }) {
 function SectionCard({ title, subtitle, icon, children }) {
   return (
     <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-      <div className="border-b border-slate-200 bg-indigo-50 px-5 py-4">
+      <div className="border-b border-slate-200 bg-indigo-50 px-5 py-2">
         <div className="flex items-start justify-between gap-3">
           <div>
             <h3 className="text-sm font-bold text-indigo-700">{title}</h3>
@@ -161,7 +161,7 @@ function SectionCard({ title, subtitle, icon, children }) {
           </div>
         </div>
       </div>
-      <div className="p-5">{children}</div>
+      <div className="p-3">{children}</div>
     </section>
   );
 }
@@ -374,7 +374,7 @@ export default function ImportsHistory() {
 
   const toolbar = (
     <div className="grid gap-3 2xl:grid-cols-[1.2fr_220px_220px_180px]">
-      <div className="flex h-12 items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 shadow-sm transition focus-within:border-brand-200 focus-within:ring-2 focus-within:ring-brand-100">
+      <div className="flex h-9 items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 shadow-sm transition focus-within:border-brand-200 focus-within:ring-2 focus-within:ring-brand-100">
         <Search size={18} className="text-slate-400" />
         <input
           type="text"
@@ -399,7 +399,7 @@ export default function ImportsHistory() {
             setStatusFilter(e.target.value);
             setPage(1);
           }}
-          className="h-12 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm text-slate-700 shadow-sm outline-none transition focus:border-brand-200 focus:ring-2 focus:ring-brand-100"
+          className="h-9 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm text-slate-700 shadow-sm outline-none transition focus:border-brand-200 focus:ring-2 focus:ring-brand-100"
         >
           <option value="All">All Statuses</option>
           <option value="Completed">Completed</option>
@@ -415,7 +415,7 @@ export default function ImportsHistory() {
           setTypeFilter(e.target.value);
           setPage(1);
         }}
-        className="h-12 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 shadow-sm outline-none transition focus:border-brand-200 focus:ring-2 focus:ring-brand-100"
+        className="h-9 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 shadow-sm outline-none transition focus:border-brand-200 focus:ring-2 focus:ring-brand-100"
       >
         {REPORT_TYPES.map((type) => (
           <option key={type} value={type}>
@@ -431,7 +431,7 @@ export default function ImportsHistory() {
           setDateFilter(e.target.value);
           setPage(1);
         }}
-        className="h-12 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 shadow-sm outline-none transition focus:border-brand-200 focus:ring-2 focus:ring-brand-100"
+        className="h-9 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 shadow-sm outline-none transition focus:border-brand-200 focus:ring-2 focus:ring-brand-100"
       />
     </div>
   );
@@ -510,14 +510,14 @@ export default function ImportsHistory() {
           </div>
         ) : null}
 
-        <div className="grid gap-2 grid-cols-[0.8fr_0.6fr_0.6fr]">
+        <div className="grid gap-2 grid-cols-[1fr_0.6fr_0.6fr]">
           <SectionCard
             title="Import Activity Timeline"
             subtitle="Recent import volume across visible records"
             icon={<Activity className="h-7 w-7 text-indigo-700" />}
           >
-            <div className="space-y-4">
-              <div className="h-[280px]">
+            <div className="space-y-2">
+              <div className="h-[240px]">
                 {timelineData.length ? (
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart
@@ -576,12 +576,12 @@ export default function ImportsHistory() {
                 )}
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-3">
-                <div className="rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-4 shadow-sm">
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+              <div className="grid gap-2 sm:grid-cols-[.9fr_0.8fr_1fr]">
+                <div className="rounded-xl border border-slate-200 bg-indigo-50/80 px-4 py-2 shadow-sm">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-indigo-700">
                     Total Rows
                   </p>
-                  <p className="mt-2 text-2xl font-bold tracking-tight text-slate-950">
+                  <p className="mt-2 text-xl font-bold tracking-tight text-indigo-800">
                     {totalRowsProcessed}
                   </p>
                   <p className="mt-1 text-sm text-slate-500">
@@ -589,11 +589,11 @@ export default function ImportsHistory() {
                   </p>
                 </div>
 
-                <div className="rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-4 shadow-sm">
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                <div className="rounded-xl border border-slate-200 bg-rose-50/80 px-4 py-2 shadow-sm">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-rose-700">
                     Duplicate Imports
                   </p>
-                  <p className="mt-2 text-2xl font-bold tracking-tight text-slate-950">
+                  <p className="mt-2 text-xl font-bold tracking-tight text-rose-800">
                     {duplicateCount}
                   </p>
                   <p className="mt-1 text-sm text-slate-500">
@@ -601,13 +601,29 @@ export default function ImportsHistory() {
                   </p>
                 </div>
 
-                <div className="rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-4 shadow-sm">
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                <div
+                  className={`rounded-xl border px-4 py-2 shadow-sm ${
+                    stats.failed === 0
+                      ? "border-emerald-200 bg-emerald-50/80"
+                      : "border-amber-200 bg-amber-50/80"
+                  }`}
+                >
+                  <p
+                    className={`text-[11px] font-semibold uppercase tracking-wide ${
+                      stats.failed === 0 ? "text-emerald-700" : "text-amber-700"
+                    }`}
+                  >
                     Queue Health
                   </p>
-                  <p className="mt-2 text-2xl font-bold tracking-tight text-slate-950">
+
+                  <p
+                    className={`mt-2 text-xl font-bold tracking-tight ${
+                      stats.failed === 0 ? "text-emerald-800" : "text-amber-800"
+                    }`}
+                  >
                     {stats.failed === 0 ? "Healthy" : "Review Needed"}
                   </p>
+
                   <p className="mt-1 text-sm text-slate-500">
                     Based on current failure count
                   </p>
@@ -618,7 +634,7 @@ export default function ImportsHistory() {
 
           <SectionCard
             title="Status Breakdown"
-            subtitle="Progress-style view of current import outcomes"
+            subtitle="Progress view of import outcomes"
             icon={<PieChartIcon className="h-7 w-7 text-indigo-700" />}
           >
             <div className="space-y-2">
@@ -658,7 +674,7 @@ export default function ImportsHistory() {
 
           <SectionCard
             title="Top Report Types"
-            subtitle="Ranked view of the most frequent report categories"
+            subtitle="Most frequent report categories"
             icon={<BarChart3 className="h-7 w-7 text-indigo-700" />}
           >
             <div className="space-y-3">
