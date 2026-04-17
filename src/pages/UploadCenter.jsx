@@ -157,8 +157,8 @@ function Toast({ toast, onClose }) {
 function SectionCard({ title, subtitle, icon, children }) {
   return (
     <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-      <div className="border-b border-slate-200 bg-indigo-50 px-5 py-4">
-        <div className="flex items-start justify-between gap-3">
+      <div className="border-b border-slate-200 bg-indigo-50 px-5 py-2">
+        <div className="flex items-start justify-between gap-2">
           <div>
             <h3 className="text-sm font-bold text-indigo-700">{title}</h3>
             {subtitle ? (
@@ -170,7 +170,7 @@ function SectionCard({ title, subtitle, icon, children }) {
           </div>
         </div>
       </div>
-      <div className="p-5">{children}</div>
+      <div className="p-3">{children}</div>
     </section>
   );
 }
@@ -402,7 +402,7 @@ export default function UploadCenter() {
 
   const toolbar = (
     <div className="grid gap-3 2xl:grid-cols-[1.2fr_240px_180px]">
-      <div className="flex h-12 items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 shadow-sm transition focus-within:border-brand-200 focus-within:ring-2 focus-within:ring-brand-100">
+      <div className="flex h-9 items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 shadow-sm transition focus-within:border-brand-200 focus-within:ring-2 focus-within:ring-brand-100">
         <Search size={18} className="text-slate-400" />
         <input
           type="text"
@@ -427,7 +427,7 @@ export default function UploadCenter() {
             setReportFilter(e.target.value);
             setPage(1);
           }}
-          className="h-12 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm text-slate-700 shadow-sm outline-none transition focus:border-brand-200 focus:ring-2 focus:ring-brand-100"
+          className="h-9 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm text-slate-700 shadow-sm outline-none transition focus:border-brand-200 focus:ring-2 focus:ring-brand-100"
         >
           {REPORT_TYPES.map((type) => (
             <option key={type} value={type}>
@@ -443,7 +443,7 @@ export default function UploadCenter() {
           setStatusFilter(e.target.value);
           setPage(1);
         }}
-        className="h-12 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 shadow-sm outline-none transition focus:border-brand-200 focus:ring-2 focus:ring-brand-100"
+        className="h-9 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 shadow-sm outline-none transition focus:border-brand-200 focus:ring-2 focus:ring-brand-100"
       >
         <option value="All">All Statuses</option>
         <option value="Queued">Queued</option>
@@ -563,11 +563,11 @@ export default function UploadCenter() {
                   className={`rounded-[24px] border-2 border-dashed p-6 text-center transition-all ${
                     dragActive
                       ? "border-indigo-300 bg-indigo-50/70"
-                      : "border-slate-200 bg-slate-50/70"
+                      : "border-slate-300 bg-slate-50/70"
                   }`}
                 >
-                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm">
-                    <Inbox size={28} />
+                  <div className="mx-auto flex h-15 w-15 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm">
+                    <Inbox className="w-11 h-11 text-indigo-700" />
                   </div>
 
                   <h3 className="mt-4 text-base font-semibold text-slate-900">
@@ -626,25 +626,25 @@ export default function UploadCenter() {
                   />
                 </div>
 
-                <div className="grid gap-3 sm:grid-cols-3">
-                  <div className="rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 shadow-sm">
-                    <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                <div className="grid gap-3 sm:grid-cols-[0.8fr_0.8fr_1fr]">
+                  <div className="rounded-xl border border-indigo-200 bg-indigo-50/80 px-4 py-3 shadow-sm">
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-700">
                       Supported Types
                     </p>
                     <p className="mt-2 text-sm font-medium text-slate-900">
                       CSV, XLSX, XLS
                     </p>
                   </div>
-                  <div className="rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 shadow-sm">
-                    <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                  <div className="rounded-xl border border-rose-200 bg-rose-50/80 px-4 py-3 shadow-sm">
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-700">
                       Max Size
                     </p>
                     <p className="mt-2 text-sm font-medium text-slate-900">
                       {MAX_FILE_SIZE_MB} MB per file
                     </p>
                   </div>
-                  <div className="rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 shadow-sm">
-                    <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                  <div className="rounded-xl border border-emerald-200 bg-emerald-50/80 px-4 py-3 shadow-sm">
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-700">
                       Validation
                     </p>
                     <p className="mt-2 text-sm font-medium text-slate-900">
@@ -758,7 +758,7 @@ export default function UploadCenter() {
               subtitle="Top report types currently present in the queue"
               icon={<BarChart3 className="h-7 w-7 text-indigo-700" />}
             >
-              <div className="space-y-4">
+              <div className="space-y-2">
                 <div className="h-[260px]">
                   {reportDistributionData.length ? (
                     <ResponsiveContainer width="100%" height="100%">
@@ -857,7 +857,7 @@ export default function UploadCenter() {
           footer={footer}
           rightActions={
             <div className="inline-flex items-center gap-2 rounded-full border border-brand-100 bg-brand-50/70 px-3 py-1.5 text-xs font-semibold text-brand-700">
-              <FileSpreadsheet size={14} />
+              <FileSpreadsheet className="h-4 w-4 text-indigo-700"/>
               {filteredQueue.length} visible of {queue.length} files
             </div>
           }
