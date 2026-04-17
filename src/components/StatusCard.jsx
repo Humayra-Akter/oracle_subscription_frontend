@@ -63,16 +63,16 @@ const cardTone = {
   },
   processing: {
     shell:
-      "border-indigo-100/80 bg-gradient-to-br from-white via-indigo-50/70 to-violet-50/50 shadow-sm hover:shadow-md hover:border-indigo-200/90",
-    glow: "from-indigo-400/15 via-violet-400/15 to-transparent",
-    rail: "bg-indigo-600",
+      "border-amber-100/80 bg-gradient-to-br from-white via-amber-50/60 to-yellow-50/40 shadow-sm hover:shadow-md hover:border-amber-200/90",
+    glow: "from-amber-400/15 via-yellow-300/10 to-transparent",
+    rail: "bg-amber-500",
     badge:
-      "border-indigo-100 bg-white/90 text-indigo-700 shadow-sm group-hover:border-indigo-200 group-hover:bg-indigo-50",
-    overline: "text-indigo-700",
+      "border-amber-100 bg-white/90 text-amber-700 shadow-sm group-hover:border-amber-200 group-hover:bg-amber-50",
+    overline: "text-amber-700",
     title: "text-slate-700",
     value: "text-slate-950",
     subtitle: "text-slate-500",
-    icon: <Sparkles size={16} />,
+    icon: <Clock3 size={16} />,
   },
   info: {
     shell:
@@ -103,7 +103,7 @@ export default function StatusCard({
   return (
     <div
       className={cn(
-        "group relative overflow-hidden rounded-2xl border px-5 py-4 transition-all duration-200 hover:-translate-y-[1px]",
+        "group relative overflow-hidden rounded-xl border px-5 py-4 transition-all duration-200 hover:-translate-y-[1px]",
         tone.shell,
         className,
       )}

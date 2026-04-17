@@ -133,7 +133,7 @@ function Toast({ toast, onClose }) {
   return (
     <div className="fixed right-6 top-6 z-50">
       <div
-        className={`flex w-[360px] items-start gap-3 rounded-2xl border px-4 py-3 shadow-lg ${tone.shell}`}
+        className={`flex w-[360px] items-start gap-3 rounded-xl border px-4 py-3 shadow-lg ${tone.shell}`}
       >
         <div className="mt-0.5">{tone.icon}</div>
         <div className="min-w-0 flex-1">
@@ -402,7 +402,7 @@ export default function UploadCenter() {
 
   const toolbar = (
     <div className="grid gap-3 2xl:grid-cols-[1.2fr_240px_180px]">
-      <div className="flex h-12 items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 shadow-sm transition focus-within:border-brand-200 focus-within:ring-2 focus-within:ring-brand-100">
+      <div className="flex h-12 items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 shadow-sm transition focus-within:border-brand-200 focus-within:ring-2 focus-within:ring-brand-100">
         <Search size={18} className="text-slate-400" />
         <input
           type="text"
@@ -427,7 +427,7 @@ export default function UploadCenter() {
             setReportFilter(e.target.value);
             setPage(1);
           }}
-          className="h-12 w-full rounded-2xl border border-slate-200 bg-white pl-10 pr-4 text-sm text-slate-700 shadow-sm outline-none transition focus:border-brand-200 focus:ring-2 focus:ring-brand-100"
+          className="h-12 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm text-slate-700 shadow-sm outline-none transition focus:border-brand-200 focus:ring-2 focus:ring-brand-100"
         >
           {REPORT_TYPES.map((type) => (
             <option key={type} value={type}>
@@ -443,7 +443,7 @@ export default function UploadCenter() {
           setStatusFilter(e.target.value);
           setPage(1);
         }}
-        className="h-12 rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-700 shadow-sm outline-none transition focus:border-brand-200 focus:ring-2 focus:ring-brand-100"
+        className="h-12 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 shadow-sm outline-none transition focus:border-brand-200 focus:ring-2 focus:ring-brand-100"
       >
         <option value="All">All Statuses</option>
         <option value="Queued">Queued</option>
@@ -528,13 +528,13 @@ export default function UploadCenter() {
         ) : null}
 
         <div className="grid gap-4 xl:grid-cols-[1.15fr_0.95fr]">
-          <div>
+          <div className="space-y-2">
             <SectionCard
               title="Upload Files"
               subtitle="Choose the report category first, then upload one or more files."
               icon={<Upload className="h-7 w-7 text-indigo-700" />}
             >
-              <div className="space-y-5">
+              <div className="space-y-3">
                 <div>
                   <label className="mb-2 block text-sm font-semibold text-slate-800">
                     Report Category
@@ -542,7 +542,7 @@ export default function UploadCenter() {
                   <select
                     value={selectedReportType}
                     onChange={(e) => setSelectedReportType(e.target.value)}
-                    className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-700 shadow-sm outline-none transition focus:border-brand-200 focus:ring-2 focus:ring-brand-100"
+                    className="h-10 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 shadow-sm outline-none transition focus:border-brand-200 focus:ring-2 focus:ring-brand-100"
                   >
                     <option value="">Select report type</option>
                     {REPORT_TYPES.filter((x) => x !== "All").map((type) => (
@@ -562,11 +562,11 @@ export default function UploadCenter() {
                   onDrop={handleDrop}
                   className={`rounded-[24px] border-2 border-dashed p-6 text-center transition-all ${
                     dragActive
-                      ? "border-brand-300 bg-brand-50/70"
+                      ? "border-indigo-300 bg-indigo-50/70"
                       : "border-slate-200 bg-slate-50/70"
                   }`}
                 >
-                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 shadow-sm">
+                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm">
                     <Inbox size={28} />
                   </div>
 
@@ -599,7 +599,7 @@ export default function UploadCenter() {
                       type="button"
                       onClick={() => inputRef.current?.click()}
                       disabled={uploading}
-                      className="inline-flex h-11 items-center gap-2 rounded-2xl bg-brand-600 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       <Upload size={16} />
                       {uploading ? "Uploading..." : "Select Files"}
@@ -609,7 +609,7 @@ export default function UploadCenter() {
                       type="button"
                       onClick={loadQueue}
                       disabled={loading}
-                      className="inline-flex h-11 items-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       <RotateCcw size={16} />
                       Refresh Queue
@@ -627,7 +627,7 @@ export default function UploadCenter() {
                 </div>
 
                 <div className="grid gap-3 sm:grid-cols-3">
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 shadow-sm">
+                  <div className="rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 shadow-sm">
                     <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
                       Supported Types
                     </p>
@@ -635,7 +635,7 @@ export default function UploadCenter() {
                       CSV, XLSX, XLS
                     </p>
                   </div>
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 shadow-sm">
+                  <div className="rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 shadow-sm">
                     <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
                       Max Size
                     </p>
@@ -643,7 +643,7 @@ export default function UploadCenter() {
                       {MAX_FILE_SIZE_MB} MB per file
                     </p>
                   </div>
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 shadow-sm">
+                  <div className="rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 shadow-sm">
                     <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
                       Validation
                     </p>
@@ -821,7 +821,7 @@ export default function UploadCenter() {
                       return (
                         <div
                           key={item.name}
-                          className="rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3"
+                          className="rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3"
                         >
                           <div className="flex items-center justify-between gap-3">
                             <div className="min-w-0">
@@ -916,7 +916,7 @@ export default function UploadCenter() {
                   >
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 shadow-sm">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 shadow-sm">
                           <FileSpreadsheet
                             size={16}
                             className="text-slate-700"
@@ -962,7 +962,7 @@ export default function UploadCenter() {
                         <button
                           type="button"
                           onClick={() => setSelectedRow(item)}
-                          className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:bg-brand-50 hover:text-brand-700"
+                          className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:bg-brand-50 hover:text-brand-700"
                           title="View"
                         >
                           <Eye size={15} />
@@ -973,7 +973,7 @@ export default function UploadCenter() {
                             type="button"
                             disabled={busyId === item.id}
                             onClick={() => handleRetry(item.id)}
-                            className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-amber-200 bg-amber-50 text-amber-700 shadow-sm transition hover:bg-amber-100 disabled:opacity-50"
+                            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-amber-200 bg-amber-50 text-amber-700 shadow-sm transition hover:bg-amber-100 disabled:opacity-50"
                             title="Retry"
                           >
                             <RotateCcw size={15} />
@@ -984,7 +984,7 @@ export default function UploadCenter() {
                           type="button"
                           disabled={busyId === item.id}
                           onClick={() => handleDelete(item.id)}
-                          className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-red-200 bg-red-50 text-red-700 shadow-sm transition hover:bg-red-100 disabled:opacity-50"
+                          className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-red-200 bg-red-50 text-red-700 shadow-sm transition hover:bg-red-100 disabled:opacity-50"
                           title="Delete"
                         >
                           <Trash2 size={15} />
