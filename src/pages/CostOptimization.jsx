@@ -516,7 +516,7 @@ export default function CostOptimization() {
 
   const toolbar = (
     <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_180px_180px]">
-      <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition focus-within:border-brand-200 focus-within:ring-2 focus-within:ring-brand-100">
+      <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 h-9 shadow-sm transition focus-within:border-brand-200 focus-within:ring-2 focus-within:ring-brand-100">
         <Search size={18} className="text-slate-400" />
         <input
           value={search}
@@ -530,7 +530,7 @@ export default function CostOptimization() {
         <select
           value={riskFilter}
           onChange={(e) => setRiskFilter(e.target.value)}
-          className="h-[52px] w-full appearance-none rounded-xl border border-slate-200 bg-white px-4 pr-10 text-sm font-semibold text-slate-700 outline-none transition focus:border-brand-200 focus:ring-2 focus:ring-brand-100"
+          className="h-9 w-full appearance-none rounded-xl border border-slate-200 bg-white px-4 pr-10 text-sm font-semibold text-slate-700 outline-none transition focus:border-brand-200 focus:ring-2 focus:ring-brand-100"
         >
           <option value="All">Risk: All</option>
           <option value="High">Risk: High</option>
@@ -547,7 +547,7 @@ export default function CostOptimization() {
         <select
           value={sortBy}
           onChange={(e) => setSortBy(e.target.value)}
-          className="h-[52px] w-full appearance-none rounded-xl border border-slate-200 bg-white px-4 pr-10 text-sm font-semibold text-slate-700 outline-none transition focus:border-brand-200 focus:ring-2 focus:ring-brand-100"
+          className="h-9 w-full appearance-none rounded-xl border border-slate-200 bg-white px-4 pr-10 text-sm font-semibold text-slate-700 outline-none transition focus:border-brand-200 focus:ring-2 focus:ring-brand-100"
         >
           <option value="savings_desc">Sort: Highest savings</option>
           <option value="cost_desc">Sort: Highest cost</option>
@@ -901,7 +901,7 @@ export default function CostOptimization() {
                 <button
                   type="button"
                   onClick={handleRefresh}
-                  className="inline-flex h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                  className="inline-flex h-9 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
                 >
                   <RefreshCw
                     size={16}
@@ -912,7 +912,7 @@ export default function CostOptimization() {
 
                 <button
                   type="button"
-                  className="inline-flex h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                  className="inline-flex h-9 items-center gap-2 rounded-xl border border-slate-200 bg-indigo-700 px-4 text-sm font-semibold text-white transition hover:bg-indigo-600"
                 >
                   <Download size={16} />
                   Export
@@ -937,28 +937,28 @@ export default function CostOptimization() {
               <table className="w-full text-left">
                 <thead className="border-b border-slate-200 bg-slate-50/80">
                   <tr>
-                    <th className="px-4 py-3 text-xs font-semibold uppercase text-center text-slate-500">
+                    <th className="px-4 py-3 text-xs font-bold uppercase text-center text-slate-500">
                       User / Service
                     </th>
-                    <th className="px-4 py-3 text-xs font-semibold uppercase text-center text-slate-500">
+                    <th className="px-4 py-3 text-xs font-bold uppercase text-center text-slate-500">
                       Department
                     </th>
-                    <th className="px-4 py-3 text-xs font-semibold uppercase text-center text-slate-500">
+                    <th className="px-4 py-3 text-xs font-bold uppercase text-center text-slate-500">
                       Opportunity
                     </th>
                     <th className="px-4 py-3 text-xs font-semibold uppercase text-center text-slate-500">
                       License Cost
                     </th>
-                    <th className="px-4 py-3 text-xs font-semibold uppercase text-center text-slate-500">
+                    <th className="px-4 py-3 text-xs font-bold uppercase text-center text-slate-500">
                       Potential Savings
                     </th>
-                    <th className="px-4 py-3 text-xs font-semibold uppercase text-center text-slate-500">
+                    <th className="px-4 py-3 text-xs font-bold uppercase text-center text-slate-500">
                       Last Activity
                     </th>
-                    <th className="px-4 py-3 text-xs font-semibold uppercase text-center text-slate-500">
+                    <th className="px-4 py-3 text-xs font-bold uppercase text-center text-slate-500">
                       Risk
                     </th>
-                    <th className="px-4 py-3 text-xs font-semibold uppercase text-center text-slate-500">
+                    <th className="px-4 py-3 text-xs font-bold uppercase text-center text-slate-500">
                       Detail
                     </th>
                   </tr>
