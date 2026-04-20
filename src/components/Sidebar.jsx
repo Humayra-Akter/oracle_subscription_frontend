@@ -261,14 +261,7 @@ export default function ComplianceLayout() {
                   pathname={pathname}
                   matchPrefix
                 />
-                <SidebarItem
-                  to="/evidence"
-                  icon={FolderOpen}
-                  label="Evidence Vault"
-                  collapsed={collapsed}
-                  pathname={pathname}
-                  matchPrefix
-                />
+
                 <hr className="opacity-20 pt-1" />
                 {/* Logout */}
                 <div>

@@ -8,13 +8,13 @@ import UsersAnalysis from "./pages/UsersAnalysis";
 import CostOptimization from "./pages/CostOptimization";
 import Compliance from "./pages/Compliance";
 import Reports from "./pages/Reports";
+import Insights from "./pages/Insights";
 
 function App() {
   return (
     <Routes>
       <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="/login" element={<Login />} />
-
       <Route
         path="/dashboard"
         element={
@@ -71,7 +71,15 @@ function App() {
           </ProtectedRoute>
         }
       />
-
+      <Route
+        path="/insights"
+        element={
+          <ProtectedRoute>
+            <Insights />
+          </ProtectedRoute>
+        }
+      />
+     
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   );
