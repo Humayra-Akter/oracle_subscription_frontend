@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import {
   ShieldCheck,
   AlertTriangle,
@@ -50,7 +50,7 @@ const EMPTY = {
   reports: {
     summary: {},
     reportOptions: [],
-    preview: { flaggedUsers: [], savings: [] },
+    preview: { flaggedUsers: [], savings: [], compliance: [] },
   },
 };
 
@@ -73,13 +73,6 @@ function formatCurrency(value) {
     style: "currency",
     currency: "USD",
     maximumFractionDigits: 2,
-  }).format(Number(value || 0));
-}
-
-function formatCompact(value) {
-  return new Intl.NumberFormat("en-US", {
-    notation: "compact",
-    maximumFractionDigits: 1,
   }).format(Number(value || 0));
 }
 
@@ -247,61 +240,71 @@ export default function Insights() {
     return () => clearTimeout(timer);
   }, [toast]);
 
-  const loadInsights = async ({ isRefresh = false } = {}) => {
-    if (isRefresh) setRefreshing(true);
-    else setLoading(true);
+  const loadInsights = useCallback(
+    async ({ isRefresh = false, signal } = {}) => {
+      if (isRefresh) setRefreshing(true);
+      else setLoading(true);
 
-    setPageError("");
+      setPageError("");
 
-    try {
-      const [usersRes, complianceRes, importsRes, reportsRes] =
-        await Promise.all([
-          usersAnalysisApi.list({}),
-          complianceApi.list({}),
-          importHistoryApi.list({}),
-          reportsApi.dashboard(),
-        ]);
+      try {
+        const [usersRes, complianceRes, importsRes, reportsRes] =
+          await Promise.all([
+            usersAnalysisApi.list({}, signal),
+            complianceApi.list({}, signal),
+            importHistoryApi.list({}, signal),
+            reportsApi.dashboard(signal),
+          ]);
 
-      setData({
-        users: {
-          items: (usersRes?.items || []).map(normalizeUser),
-          stats: usersRes?.stats || {},
-        },
-        compliance: {
-          items: (complianceRes?.items || []).map(normalizeCompliance),
-          stats: complianceRes?.stats || {},
-        },
-        imports: {
-          items: (importsRes?.items || []).map(normalizeImport),
-          stats: importsRes?.stats || {},
-        },
-        reports: {
-          summary: reportsRes?.summary || {},
-          reportOptions: reportsRes?.reportOptions || [],
-          preview: reportsRes?.preview || { flaggedUsers: [], savings: [] },
-        },
-      });
+        setData({
+          users: {
+            items: (usersRes?.items || []).map(normalizeUser),
+            stats: usersRes?.stats || {},
+          },
+          compliance: {
+            items: (complianceRes?.items || []).map(normalizeCompliance),
+            stats: complianceRes?.stats || {},
+          },
+          imports: {
+            items: (importsRes?.items || []).map(normalizeImport),
+            stats: importsRes?.stats || {},
+          },
+          reports: {
+            summary: reportsRes?.summary || {},
+            reportOptions: reportsRes?.reportOptions || [],
+            preview: {
+              flaggedUsers: reportsRes?.preview?.flaggedUsers || [],
+              savings: reportsRes?.preview?.savings || [],
+              compliance: reportsRes?.preview?.compliance || [],
+            },
+          },
+        });
 
-      if (isRefresh) {
-        showToast(
-          "success",
-          "Insights refreshed",
-          "Cross-module signals have been updated from live backend data.",
-        );
+        if (isRefresh) {
+          showToast(
+            "success",
+            "Insights refreshed",
+            "Cross-module signals have been updated from live backend data.",
+          );
+        }
+      } catch (error) {
+        if (error.name === "AbortError") return;
+        const message = error.message || "Failed to load insights.";
+        setPageError(message);
+        showToast("error", "Load failed", message);
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
       }
-    } catch (error) {
-      const message = error.message || "Failed to load insights.";
-      setPageError(message);
-      showToast("error", "Load failed", message);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
+    },
+    [],
+  );
 
   useEffect(() => {
-    loadInsights();
-  }, []);
+    const controller = new AbortController();
+    loadInsights({ signal: controller.signal });
+    return () => controller.abort();
+  }, [loadInsights]);
 
   const users = data.users.items;
   const compliance = data.compliance.items;
@@ -499,6 +502,17 @@ export default function Insights() {
             {pageError}
           </div>
         ) : null}
+
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={() => loadInsights({ isRefresh: true })}
+            className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-800 transition hover:bg-slate-50"
+          >
+            <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} />
+            Refresh Insights
+          </button>
+        </div>
 
         <div className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
           <SectionCard
