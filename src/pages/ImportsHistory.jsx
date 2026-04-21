@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import {
   Search,
   Eye,
@@ -71,15 +71,25 @@ function normalizeImportRecord(item) {
   return {
     id: item?.id || "",
     importCode: item?.importCode || "",
+    uploadedFileId: item?.uploadedFileId || null,
     fileName: item?.fileName || "-",
     reportType: item?.reportType || "-",
     createdAt: item?.createdAt || null,
+    updatedAt: item?.updatedAt || null,
+    processingStartedAt: item?.processingStartedAt || null,
+    processingCompletedAt: item?.processingCompletedAt || null,
     status: normalizeStatus(item?.status),
+    rawStatus: item?.rawStatus || item?.status || "",
     fileSizeLabel: item?.fileSizeLabel || "-",
     rowsProcessed: Number(item?.rowsProcessed || 0),
+    successRows: Number(item?.successRows || 0),
+    failedRows: Number(item?.failedRows || 0),
+    duplicateRows: Number(item?.duplicateRows || 0),
+    warningCount: Number(item?.warningCount || 0),
     importedBy: item?.importedBy || "-",
     message: item?.message || "-",
     duplicate: Boolean(item?.duplicate),
+    uploadedFile: item?.uploadedFile || null,
   };
 }
 
@@ -199,39 +209,48 @@ export default function ImportsHistory() {
     return () => clearTimeout(timer);
   }, [toast]);
 
-  const loadImports = async () => {
-    setLoading(true);
-    setPageError("");
+  const loadImports = useCallback(
+    async (signal) => {
+      setLoading(true);
+      setPageError("");
 
-    try {
-      const result = await importHistoryApi.list({
-        search: searchTerm,
-        status: statusFilter,
-        reportType: typeFilter,
-        date: dateFilter,
-      });
+      try {
+        const result = await importHistoryApi.list(
+          {
+            search: searchTerm,
+            status: statusFilter,
+            reportType: typeFilter,
+            date: dateFilter,
+          },
+          signal,
+        );
 
-      setImports((result.items || []).map(normalizeImportRecord));
-      setStats({
-        total: 0,
-        completed: 0,
-        processing: 0,
-        failed: 0,
-        queued: 0,
-        ...(result.stats || {}),
-      });
-    } catch (error) {
-      const message = error.message || "Failed to load import history.";
-      setPageError(message);
-      showToast("error", "Could not load import history", message);
-    } finally {
-      setLoading(false);
-    }
-  };
+        setImports((result.items || []).map(normalizeImportRecord));
+        setStats({
+          total: 0,
+          completed: 0,
+          processing: 0,
+          failed: 0,
+          queued: 0,
+          ...(result.stats || {}),
+        });
+      } catch (error) {
+        if (error.name === "AbortError") return;
+        const message = error.message || "Failed to load import history.";
+        setPageError(message);
+        showToast("error", "Could not load import history", message);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [searchTerm, statusFilter, typeFilter, dateFilter],
+  );
 
   useEffect(() => {
-    loadImports();
-  }, [searchTerm, statusFilter, typeFilter, dateFilter]);
+    const controller = new AbortController();
+    loadImports(controller.signal);
+    return () => controller.abort();
+  }, [loadImports]);
 
   const totalPages = Math.max(1, Math.ceil(imports.length / PAGE_SIZE));
 
@@ -283,53 +302,53 @@ export default function ImportsHistory() {
       .slice(0, 5);
   }, [imports]);
 
- const statusSummary = useMemo(() => {
-   const total =
-     stats.completed + stats.processing + stats.queued + stats.failed || 1;
+  const statusSummary = useMemo(() => {
+    const total =
+      stats.completed + stats.processing + stats.queued + stats.failed || 1;
 
-   return [
-     {
-       label: "Completed",
-       value: stats.completed,
-       percent: Math.round((stats.completed / total) * 100),
-       bar: "bg-emerald-500",
-       dot: "bg-emerald-500",
-       text: "text-emerald-700",
-       bg: "bg-emerald-50",
-       border: "border-emerald-200",
-     },
-     {
-       label: "Processing",
-       value: stats.processing,
-       percent: Math.round((stats.processing / total) * 100),
-       bar: "bg-amber-500",
-       dot: "bg-amber-500",
-       text: "text-amber-700",
-       bg: "bg-amber-50",
-       border: "border-amber-200",
-     },
-     {
-       label: "Queued",
-       value: stats.queued,
-       percent: Math.round((stats.queued / total) * 100),
-       bar: "bg-amber-400",
-       dot: "bg-amber-400",
-       text: "text-amber-700",
-       bg: "bg-amber-50",
-       border: "border-amber-200",
-     },
-     {
-       label: "Failed",
-       value: stats.failed,
-       percent: Math.round((stats.failed / total) * 100),
-       bar: "bg-red-500",
-       dot: "bg-red-500",
-       text: "text-red-700",
-       bg: "bg-red-50",
-       border: "border-red-200",
-     },
-   ];
- }, [stats]);
+    return [
+      {
+        label: "Completed",
+        value: stats.completed,
+        percent: Math.round((stats.completed / total) * 100),
+        bar: "bg-emerald-500",
+        dot: "bg-emerald-500",
+        text: "text-emerald-700",
+        bg: "bg-emerald-50",
+        border: "border-emerald-200",
+      },
+      {
+        label: "Processing",
+        value: stats.processing,
+        percent: Math.round((stats.processing / total) * 100),
+        bar: "bg-amber-500",
+        dot: "bg-amber-500",
+        text: "text-amber-700",
+        bg: "bg-amber-50",
+        border: "border-amber-200",
+      },
+      {
+        label: "Queued",
+        value: stats.queued,
+        percent: Math.round((stats.queued / total) * 100),
+        bar: "bg-amber-400",
+        dot: "bg-amber-400",
+        text: "text-amber-700",
+        bg: "bg-amber-50",
+        border: "border-amber-200",
+      },
+      {
+        label: "Failed",
+        value: stats.failed,
+        percent: Math.round((stats.failed / total) * 100),
+        bar: "bg-red-500",
+        dot: "bg-red-500",
+        text: "text-red-700",
+        bg: "bg-red-50",
+        border: "border-red-200",
+      },
+    ];
+  }, [stats]);
 
   const handleReprocess = async (id) => {
     try {
@@ -895,6 +914,18 @@ export default function ImportsHistory() {
                     value={formatDateTime(selectedRow.createdAt)}
                   />
                   <DetailItem
+                    label="Updated"
+                    value={formatDateTime(selectedRow.updatedAt)}
+                  />
+                  <DetailItem
+                    label="Started At"
+                    value={formatDateTime(selectedRow.processingStartedAt)}
+                  />
+                  <DetailItem
+                    label="Completed At"
+                    value={formatDateTime(selectedRow.processingCompletedAt)}
+                  />
+                  <DetailItem
                     label="Imported By"
                     value={selectedRow.importedBy}
                   />
@@ -908,11 +939,27 @@ export default function ImportsHistory() {
                     value={selectedRow.rowsProcessed}
                   />
                   <DetailItem
+                    label="Success Rows"
+                    value={selectedRow.successRows}
+                  />
+                  <DetailItem
+                    label="Failed Rows"
+                    value={selectedRow.failedRows}
+                  />
+                  <DetailItem
+                    label="Duplicate Rows"
+                    value={selectedRow.duplicateRows}
+                  />
+                  <DetailItem
+                    label="Warning Count"
+                    value={selectedRow.warningCount}
+                  />
+                  <DetailItem
                     label="File Size"
                     value={selectedRow.fileSizeLabel}
                   />
                   <DetailItem
-                    label="Duplicate"
+                    label="Duplicate Import"
                     value={
                       <StatusPill
                         value={selectedRow.duplicate ? "Yes" : "No"}
@@ -927,6 +974,51 @@ export default function ImportsHistory() {
                   />
                 </DetailGrid>
               </DetailSection>
+
+              {selectedRow.uploadedFile ? (
+                <DetailSection title="Linked Uploaded File">
+                  <DetailGrid>
+                    <DetailItem
+                      label="Uploaded File ID"
+                      value={selectedRow.uploadedFile.id}
+                    />
+                    <DetailItem
+                      label="Original Name"
+                      value={selectedRow.uploadedFile.originalName}
+                    />
+                    <DetailItem
+                      label="Stored Name"
+                      value={selectedRow.uploadedFile.storedName}
+                    />
+                    <DetailItem
+                      label="Category"
+                      value={selectedRow.uploadedFile.fileCategory}
+                    />
+                    <DetailItem
+                      label="File Type"
+                      value={selectedRow.uploadedFile.fileType}
+                    />
+                    <DetailItem
+                      label="Upload Status"
+                      value={
+                        <StatusPill
+                          value={normalizeStatus(
+                            selectedRow.uploadedFile.status,
+                          )}
+                          type={getStatusTone(
+                            normalizeStatus(selectedRow.uploadedFile.status),
+                          )}
+                        />
+                      }
+                    />
+                    <DetailItem
+                      label="Upload Error"
+                      value={selectedRow.uploadedFile.uploadError || "-"}
+                      fullWidth
+                    />
+                  </DetailGrid>
+                </DetailSection>
+              ) : null}
             </div>
           ) : null}
         </DetailModal>

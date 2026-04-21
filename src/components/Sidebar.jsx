@@ -180,7 +180,7 @@ export default function ComplianceLayout() {
                 />
 
                 {!collapsed ? (
-                  <div className="px-2 pt-2 text-[11px] font-semibold uppercase text-slate-500">
+                  <div className="px-2 pt-4 text-[11px] font-semibold uppercase text-slate-500">
                     Data Operations
                   </div>
                 ) : (
@@ -205,7 +205,7 @@ export default function ComplianceLayout() {
                 />
 
                 {!collapsed ? (
-                  <div className="px-2 pt-2 text-[11px] font-semibold uppercase text-slate-500">
+                  <div className="px-2 pt-4 text-[11px] font-semibold uppercase text-slate-500">
                     Analysis
                   </div>
                 ) : (
@@ -246,7 +246,7 @@ export default function ComplianceLayout() {
                 />
 
                 {!collapsed ? (
-                  <div className="px-2 pt-2 text-[11px] font-semibold uppercase text-slate-500">
+                  <div className="px-2 pt-4 text-[11px] font-semibold uppercase text-slate-500">
                     Intelligence
                   </div>
                 ) : (
@@ -262,9 +262,9 @@ export default function ComplianceLayout() {
                   matchPrefix
                 />
 
-                <hr className="opacity-20 pt-1" />
+                <div className="mt-5">
+                <hr className="opacity-20 pt-3" />
                 {/* Logout */}
-                <div>
                   <button
                     onClick={() => {
                       localStorage.removeItem("token");

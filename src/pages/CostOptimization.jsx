@@ -1,20 +1,18 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import {
   Search,
   RefreshCw,
   Download,
   Eye,
   ChevronDown,
-  DollarSign,
-  ShieldAlert,
-  Activity,
-  TrendingUp,
   CheckCircle2,
   AlertTriangle,
   X,
   ShieldCheck,
   BarChart3,
   PieChart as PieChartIcon,
+  ShieldAlert,
+  TrendingUp,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -40,7 +38,7 @@ import {
   DetailGrid,
   DetailItem,
 } from "../components/DetailSection";
-import { usersAnalysisApi } from "../utils/api";
+import { costOptimizationApi } from "../utils/api";
 
 const PAGE_SIZE = 10;
 
@@ -95,141 +93,50 @@ const getRiskType = (risk) => {
 };
 
 const normalizeRow = (item, index) => {
-  const licenseCost = toNumber(
-    getFirst(
-      item.licenseCost,
-      item.cost,
-      item.assignedCost,
-      item.subscriptionCost,
-      item.annualCost,
-      0,
-    ),
-  );
-
-  const potentialSavingsRaw = getFirst(
-    item.potentialSavings,
-    item.savings,
-    item.wastedCost,
-    item.avoidableCost,
-    item.recoverableSpend,
-    null,
-  );
-
-  const inactiveDays = getFirst(
-    item.lastActivityDays,
-    item.daysSinceLastActivity,
-    item.inactiveDays,
-    item.lastTransactionDays,
-    null,
-  );
-
-  const usageScore = getFirst(
-    item.usageScore,
-    item.utilizationScore,
-    item.activityScore,
-    item.engagementScore,
-    null,
-  );
-
-  const potentialSavings =
-    potentialSavingsRaw !== null
-      ? toNumber(potentialSavingsRaw)
-      : inactiveDays >= 90
-        ? licenseCost
-        : usageScore !== null && toNumber(usageScore) <= 25
-          ? licenseCost * 0.7
-          : usageScore !== null && toNumber(usageScore) <= 50
-            ? licenseCost * 0.4
-            : licenseCost * 0.2;
-
-  let opportunityType = "Review required";
-  if (inactiveDays !== null && toNumber(inactiveDays) >= 90) {
-    opportunityType = "Inactive license";
-  } else if (usageScore !== null && toNumber(usageScore) <= 25) {
-    opportunityType = "Low utilization";
-  } else if (potentialSavings >= licenseCost && licenseCost > 0) {
-    opportunityType = "Full reclaim candidate";
-  } else if (potentialSavings > 0) {
-    opportunityType = "Rightsize candidate";
-  }
-
   return {
-    id: getFirst(
-      item.id,
-      item._id,
-      item.userId,
-      item.employeeId,
-      `row-${index}`,
-    ),
+    id: getFirst(item.id, item.assignmentId, `row-${index}`),
     raw: item,
+    userId: getFirst(item.userId, null),
     userName: getFirst(
       item.userName,
-      item.name,
-      item.employeeName,
       item.fullName,
       item.email,
       "Unknown User",
     ),
+    fullName: getFirst(item.fullName, item.userName, "Unknown User"),
+    email: getFirst(item.email, "-"),
+    employeeId: getFirst(item.employeeId, "-"),
     serviceName: getFirst(
       item.serviceName,
-      item.service,
-      item.productName,
-      item.module,
-      item.subscriptionName,
+      item.licenseName,
       "Unknown Service",
     ),
-    department: getFirst(
-      item.department,
-      item.departmentName,
-      item.businessUnit,
-      item.orgUnit,
-      item.team,
-      "Unassigned",
+    licenseName: getFirst(
+      item.licenseName,
+      item.serviceName,
+      "Unknown Service",
     ),
-    licenseCost,
-    potentialSavings,
-    risk: normalizeRisk(
-      getFirst(item.risk, item.riskLevel, item.priority, item.status, "Medium"),
-    ),
-    inactiveDays: inactiveDays !== null ? toNumber(inactiveDays) : null,
-    usageScore: usageScore !== null ? toNumber(usageScore) : null,
-    opportunityType,
-  };
-};
-
-const deriveStatsFromRows = (rows) => {
-  const potentialSavings = rows.reduce(
-    (sum, row) => sum + toNumber(row.potentialSavings),
-    0,
-  );
-
-  const totalCost = rows.reduce(
-    (sum, row) => sum + toNumber(row.licenseCost),
-    0,
-  );
-
-  const inactiveUsers = rows.filter(
-    (row) => row.inactiveDays !== null && row.inactiveDays >= 90,
-  ).length;
-
-  const highRiskServices = new Set(
-    rows.filter((row) => row.risk === "High").map((row) => row.serviceName),
-  ).size;
-
-  const byDepartment = rows.reduce((acc, row) => {
-    acc[row.department] = (acc[row.department] || 0) + row.potentialSavings;
-    return acc;
-  }, {});
-
-  const mostAffectedDepartment =
-    Object.entries(byDepartment).sort((a, b) => b[1] - a[1])[0]?.[0] || "-";
-
-  return {
-    potentialSavings,
-    totalCost,
-    inactiveUsers,
-    highRiskServices,
-    mostAffectedDepartment,
+    department: getFirst(item.department, "Unassigned"),
+    licenseCost: toNumber(item.licenseCost, 0),
+    annualCost: toNumber(item.annualCost, 0),
+    potentialSavings: toNumber(item.potentialSavings, 0),
+    risk: normalizeRisk(getFirst(item.risk, "Medium")),
+    inactiveDays:
+      item.inactiveDays === null || item.inactiveDays === undefined
+        ? null
+        : toNumber(item.inactiveDays),
+    usageScore:
+      item.usageScore === null || item.usageScore === undefined
+        ? null
+        : toNumber(item.usageScore),
+    transactionCount: toNumber(item.transactionCount, 0),
+    utilizationStatus: getFirst(item.utilizationStatus, "UNKNOWN"),
+    employmentStatus: getFirst(item.employmentStatus, "-"),
+    opportunityType: getFirst(item.opportunityType, "Review required"),
+    assignmentStatus: getFirst(item.assignmentStatus, "ACTIVE"),
+    pricingType: getFirst(item.pricingType, "-"),
+    currency: getFirst(item.currency, "USD"),
+    assignedRoles: Array.isArray(item.assignedRoles) ? item.assignedRoles : [],
   };
 };
 
@@ -292,11 +199,45 @@ function SectionCard({ title, subtitle, icon, children }) {
   );
 }
 
+function SignalBox({ label, value, tone = "indigo" }) {
+  const toneMap = {
+    indigo: {
+      wrap: "border-indigo-200 bg-indigo-50/80",
+      title: "text-indigo-700",
+      value: "text-indigo-800",
+    },
+    emerald: {
+      wrap: "border-emerald-200 bg-emerald-50/80",
+      title: "text-emerald-700",
+      value: "text-emerald-800",
+    },
+    amber: {
+      wrap: "border-amber-200 bg-amber-50/80",
+      title: "text-amber-700",
+      value: "text-amber-800",
+    },
+  };
+
+  const t = toneMap[tone] || toneMap.indigo;
+
+  return (
+    <div className={`rounded-xl border px-4 py-2 shadow-sm ${t.wrap}`}>
+      <p
+        className={`text-[11px] font-semibold uppercase tracking-wide ${t.title}`}
+      >
+        {label}
+      </p>
+      <p className={`mt-2 text-base font-bold ${t.value}`}>{value}</p>
+    </div>
+  );
+}
+
 export default function CostOptimization() {
   const [rows, setRows] = useState([]);
   const [stats, setStats] = useState({});
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [detailLoading, setDetailLoading] = useState(false);
   const [error, setError] = useState("");
   const [toast, setToast] = useState(null);
 
@@ -316,42 +257,40 @@ export default function CostOptimization() {
     return () => clearTimeout(timer);
   }, [toast]);
 
+  const loadCostData = useCallback(async (signal) => {
+    try {
+      setLoading(true);
+      setError("");
+
+      const response = await costOptimizationApi.list({}, signal);
+      const items = Array.isArray(response?.items) ? response.items : [];
+      const normalized = items.map(normalizeRow);
+
+      setRows(normalized);
+      setStats(response?.stats || {});
+    } catch (err) {
+      if (err.name !== "AbortError") {
+        const message = err.message || "Failed to load cost optimization data.";
+        setError(message);
+        showToast("error", "Could not load cost optimization data", message);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     const controller = new AbortController();
-
-    const load = async () => {
-      try {
-        setLoading(true);
-        setError("");
-
-        const response = await usersAnalysisApi.list({}, controller.signal);
-        const items = Array.isArray(response?.items) ? response.items : [];
-        const normalized = items.map(normalizeRow);
-
-        setRows(normalized);
-        setStats(response?.stats || {});
-      } catch (err) {
-        if (err.name !== "AbortError") {
-          const message =
-            err.message || "Failed to load cost optimization data.";
-          setError(message);
-          showToast("error", "Could not load cost optimization data", message);
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    load();
+    loadCostData(controller.signal);
     return () => controller.abort();
-  }, []);
+  }, [loadCostData]);
 
   const handleRefresh = async () => {
     try {
       setRefreshing(true);
       setError("");
 
-      const response = await usersAnalysisApi.list({});
+      const response = await costOptimizationApi.list({});
       const items = Array.isArray(response?.items) ? response.items : [];
       const normalized = items.map(normalizeRow);
 
@@ -371,6 +310,47 @@ export default function CostOptimization() {
     }
   };
 
+  const handleExport = async () => {
+    try {
+      const { blob, fileName } = await costOptimizationApi.exportCsv();
+      const url = window.URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = fileName;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.URL.revokeObjectURL(url);
+
+      showToast(
+        "success",
+        "Export complete",
+        "Cost optimization report downloaded successfully.",
+      );
+    } catch (err) {
+      const message =
+        err.message || "Failed to export cost optimization report.";
+      showToast("error", "Export failed", message);
+    }
+  };
+
+  const handleViewDetail = async (row) => {
+    try {
+      setDetailLoading(true);
+      const detail = await costOptimizationApi.getById(row.id);
+      setSelectedRow(normalizeRow(detail, 0));
+    } catch (err) {
+      setSelectedRow(row);
+      showToast(
+        "error",
+        "Could not load full details",
+        err.message || "Showing available row data instead.",
+      );
+    } finally {
+      setDetailLoading(false);
+    }
+  };
+
   const processedRows = useMemo(() => {
     let next = [...rows];
 
@@ -382,7 +362,8 @@ export default function CostOptimization() {
           row.userName.toLowerCase().includes(q) ||
           row.serviceName.toLowerCase().includes(q) ||
           row.department.toLowerCase().includes(q) ||
-          row.opportunityType.toLowerCase().includes(q),
+          row.opportunityType.toLowerCase().includes(q) ||
+          row.email.toLowerCase().includes(q),
       );
     }
 
@@ -411,53 +392,35 @@ export default function CostOptimization() {
   }, [search, riskFilter, sortBy]);
 
   const totalPages = Math.max(1, Math.ceil(processedRows.length / PAGE_SIZE));
-  const paginatedRows = processedRows.slice(
-    (page - 1) * PAGE_SIZE,
-    page * PAGE_SIZE,
+
+  const paginatedRows = useMemo(
+    () => processedRows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    [processedRows, page],
   );
 
-  const derived = useMemo(() => deriveStatsFromRows(rows), [rows]);
+  useEffect(() => {
+    if (page > totalPages) setPage(1);
+  }, [page, totalPages]);
 
   const potentialSavings = toNumber(
-    getFirst(
-      stats.totalPotentialSavings,
-      stats.potentialSavings,
-      stats.recoverableSpend,
-      derived.potentialSavings,
-    ),
+    getFirst(stats.totalPotentialSavings, stats.potentialSavings, 0),
   );
 
   const totalCost = toNumber(
-    getFirst(
-      stats.totalAssignedCost,
-      stats.totalCost,
-      stats.subscriptionCost,
-      derived.totalCost,
-    ),
+    getFirst(stats.totalAssignedCost, stats.totalCost, 0),
   );
 
   const inactiveUsers = toNumber(
-    getFirst(
-      stats.inactiveCandidates,
-      stats.inactiveUsers,
-      stats.reviewAccounts,
-      derived.inactiveUsers,
-    ),
+    getFirst(stats.inactiveCandidates, stats.inactiveUsers, 0),
   );
 
   const highRiskServices = toNumber(
-    getFirst(
-      stats.highRiskServices,
-      stats.highRiskCount,
-      stats.criticalServices,
-      derived.highRiskServices,
-    ),
+    getFirst(stats.highRiskServices, stats.highRiskCount, 0),
   );
 
   const mostAffectedDepartment = getFirst(
     stats.mostAffectedDepartment,
     stats.topDepartment,
-    derived.mostAffectedDepartment,
     "-",
   );
 
@@ -628,92 +591,117 @@ export default function CostOptimization() {
         ) : null}
 
         <div className="grid gap-2 xl:grid-cols-[1.05fr_0.95fr]">
-          <SectionCard
-            title="Department Savings Heatmap"
-            subtitle="Top departments by current savings potential"
-            icon={<BarChart3 className="h-7 w-7 text-indigo-700" />}
-          >
-            <div className="space-y-2">
-              <div className="h-80">
-                {departmentSavingsData.length ? (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      data={departmentSavingsData}
-                      layout="vertical"
-                      margin={{ top: 8, right: 12, left: 8, bottom: 8 }}
-                      barSize={18}
-                    >
-                      <CartesianGrid
-                        strokeDasharray="3 3"
-                        stroke="#e2e8f0"
-                        vertical={false}
-                      />
-                      <XAxis
-                        type="number"
-                        allowDecimals={false}
-                        stroke="#94a3b8"
-                      />
-                      <YAxis
-                        type="category"
-                        dataKey="name"
-                        width={140}
-                        stroke="#64748b"
-                        tick={{ fontSize: 12 }}
-                      />
-                      <Tooltip
-                        formatter={(value) => formatCurrency(value)}
-                        contentStyle={{
-                          borderRadius: 16,
-                          border: "1px solid #e2e8f0",
-                          backgroundColor: "#fff",
-                          boxShadow: "0 10px 24px rgba(15, 23, 42, 0.08)",
-                        }}
-                      />
-                      <Bar
-                        dataKey="value"
-                        radius={[0, 10, 10, 0]}
-                        fill="#7c3aed"
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="flex h-full items-center justify-center text-sm text-slate-500">
-                    No department savings data available
-                  </div>
-                )}
-              </div>
-
-              {departmentSavingsData.length ? (
-                <div className="grid gap-3 md:grid-cols-[1fr_auto]">
-                  <div className="rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 shadow-sm">
-                    <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                      What this shows
-                    </p>
-                    <p className="mt-2 text-sm leading-6 text-slate-600">
-                      This chart ranks departments by the total savings
-                      opportunity found in the current visible dataset. Higher
-                      bars indicate departments where reclaim, rightsize, or
-                      inactive-license review may deliver the strongest
-                      financial impact first.
-                    </p>
-                  </div>
-
-                  <div className="rounded-xl border border-indigo-200 bg-indigo-50/80 px-4 py-3 shadow-sm">
-                    <p className="text-[11px] font-semibold uppercase tracking-wide text-indigo-700">
-                      Top Department
-                    </p>
-                    <p className="mt-2 text-base font-bold text-indigo-800">
-                      {departmentSavingsData[0]?.name || "-"}
-                    </p>
-                    <p className="mt-1 text-sm text-slate-600">
-                      {formatCurrency(departmentSavingsData[0]?.value || 0)}{" "}
-                      potential savings
-                    </p>
-                  </div>
+          <div className="space-y-3">
+            <SectionCard
+              title="Department Savings Heatmap"
+              subtitle="Top departments by current savings potential"
+              icon={<BarChart3 className="h-7 w-7 text-indigo-700" />}
+            >
+              <div className="space-y-2">
+                <div className="h-80">
+                  {departmentSavingsData.length ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={departmentSavingsData}
+                        layout="vertical"
+                        margin={{ top: 8, right: 12, left: 8, bottom: 8 }}
+                        barSize={18}
+                      >
+                        <CartesianGrid
+                          strokeDasharray="3 3"
+                          stroke="#e2e8f0"
+                          vertical={false}
+                        />
+                        <XAxis
+                          type="number"
+                          allowDecimals={false}
+                          stroke="#94a3b8"
+                        />
+                        <YAxis
+                          type="category"
+                          dataKey="name"
+                          width={140}
+                          stroke="#64748b"
+                          tick={{ fontSize: 12 }}
+                        />
+                        <Tooltip
+                          formatter={(value) => formatCurrency(value)}
+                          contentStyle={{
+                            borderRadius: 16,
+                            border: "1px solid #e2e8f0",
+                            backgroundColor: "#fff",
+                            boxShadow: "0 10px 24px rgba(15, 23, 42, 0.08)",
+                          }}
+                        />
+                        <Bar
+                          dataKey="value"
+                          radius={[0, 10, 10, 0]}
+                          fill="#7c3aed"
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-sm text-slate-500">
+                      No department savings data available
+                    </div>
+                  )}
                 </div>
-              ) : null}
-            </div>
-          </SectionCard>
+
+                {departmentSavingsData.length ? (
+                  <div className="grid gap-3 md:grid-cols-[1fr_auto]">
+                    <div className="rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 shadow-sm">
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                        What this shows
+                      </p>
+                      <p className="mt-2 text-sm leading-6 text-slate-600">
+                        This chart ranks departments by the total savings
+                        opportunity found in the current visible dataset. Higher
+                        bars indicate departments where reclaim, rightsize, or
+                        inactive-license review may deliver the strongest
+                        financial impact first.
+                      </p>
+                    </div>
+
+                    <div className="rounded-xl border border-indigo-200 bg-indigo-50/80 px-4 py-3 shadow-sm">
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-indigo-700">
+                        Top Department
+                      </p>
+                      <p className="mt-2 text-base font-bold text-indigo-800">
+                        {departmentSavingsData[0]?.name || "-"}
+                      </p>
+                      <p className="mt-1 text-sm text-slate-600">
+                        {formatCurrency(departmentSavingsData[0]?.value || 0)}{" "}
+                        potential savings
+                      </p>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            </SectionCard>
+            <SectionCard
+              title="Optimization Signals"
+              subtitle="Quick backend-driven decision markers"
+              icon={<TrendingUp className="h-7 w-7 text-indigo-700" />}
+            >
+              <div className="grid gap-1 sm:grid-cols-3">
+                <SignalBox
+                  label="Most Affected Department"
+                  value={mostAffectedDepartment}
+                  tone="indigo"
+                />
+                <SignalBox
+                  label="Top Savings Driver"
+                  value={topRecord ? topRecord.serviceName : "-"}
+                  tone="emerald"
+                />
+                <SignalBox
+                  label="Largest Opportunity"
+                  value={topRecord ? topRecord.opportunityType : "-"}
+                  tone="amber"
+                />
+              </div>
+            </SectionCard>
+          </div>
 
           <div className="grid gap-3">
             <SectionCard
@@ -805,31 +793,6 @@ export default function CostOptimization() {
                 </div>
               </div>
             </SectionCard>
-
-            <SectionCard
-              title="Optimization Signals"
-              subtitle="Quick backend-driven decision markers"
-              icon={<TrendingUp className="h-7 w-7 text-indigo-700" />}
-            >
-              <div className="grid gap-1 sm:grid-cols-3">
-                <SignalBox
-                  label="Most Affected Department"
-                  value={mostAffectedDepartment}
-                  tone="indigo"
-                />
-                <SignalBox
-                  label="Top Savings Driver"
-                  value={topRecord ? topRecord.serviceName : "-"}
-                  tone="emerald"
-                />
-                <SignalBox
-                  label="Largest Opportunity"
-                  value={topRecord ? topRecord.opportunityType : "-"}
-                  tone="amber"
-                />
-              </div>
-            </SectionCard>
-
             <SectionCard
               title="Risk Distribution"
               subtitle="Live risk concentration across current visible records"
@@ -912,6 +875,7 @@ export default function CostOptimization() {
 
                 <button
                   type="button"
+                  onClick={handleExport}
                   className="inline-flex h-9 items-center gap-2 rounded-xl border border-slate-200 bg-indigo-700 px-4 text-sm font-semibold text-white transition hover:bg-indigo-600"
                 >
                   <Download size={16} />
@@ -1042,7 +1006,7 @@ export default function CostOptimization() {
                         <td className="px-6 py-4">
                           <button
                             type="button"
-                            onClick={() => setSelectedRow(row)}
+                            onClick={() => handleViewDetail(row)}
                             className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-1 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 hover:shadow-md"
                           >
                             <Eye size={15} />
@@ -1069,7 +1033,11 @@ export default function CostOptimization() {
           onClose={() => setSelectedRow(null)}
           width="max-w-5xl"
         >
-          {selectedRow ? (
+          {detailLoading ? (
+            <div className="py-12 text-center text-sm text-slate-500">
+              Loading cost record details...
+            </div>
+          ) : selectedRow ? (
             <div className="space-y-6">
               <DetailSection
                 title="Financial Summary"
@@ -1080,6 +1048,10 @@ export default function CostOptimization() {
                     label="License Cost"
                     value={formatCurrency(selectedRow.licenseCost)}
                     emphasis
+                  />
+                  <DetailItem
+                    label="Annual Cost"
+                    value={formatCurrency(selectedRow.annualCost)}
                   />
                   <DetailItem
                     label="Potential Savings"
@@ -1095,10 +1067,6 @@ export default function CostOptimization() {
                       />
                     }
                   />
-                  <DetailItem
-                    label="Opportunity"
-                    value={selectedRow.opportunityType}
-                  />
                 </DetailGrid>
               </DetailSection>
 
@@ -1108,18 +1076,27 @@ export default function CostOptimization() {
               >
                 <DetailGrid cols="grid-cols-1 md:grid-cols-2 xl:grid-cols-4">
                   <DetailItem label="User" value={selectedRow.userName} />
+                  <DetailItem label="Email" value={selectedRow.email} />
+                  <DetailItem
+                    label="Employee ID"
+                    value={selectedRow.employeeId}
+                  />
                   <DetailItem label="Service" value={selectedRow.serviceName} />
+                  <DetailItem
+                    label="License Name"
+                    value={selectedRow.licenseName}
+                  />
                   <DetailItem
                     label="Department"
                     value={selectedRow.department}
                   />
                   <DetailItem
-                    label="Last Activity"
-                    value={
-                      selectedRow.inactiveDays !== null
-                        ? `${selectedRow.inactiveDays} days`
-                        : "-"
-                    }
+                    label="Employment Status"
+                    value={selectedRow.employmentStatus}
+                  />
+                  <DetailItem
+                    label="Assignment Status"
+                    value={selectedRow.assignmentStatus}
                   />
                 </DetailGrid>
               </DetailSection>
@@ -1128,7 +1105,15 @@ export default function CostOptimization() {
                 title="Usage Assessment"
                 description="Usage-based view used for optimization recommendation."
               >
-                <DetailGrid cols="grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
+                <DetailGrid cols="grid-cols-1 md:grid-cols-2 xl:grid-cols-4">
+                  <DetailItem
+                    label="Inactive Days"
+                    value={
+                      selectedRow.inactiveDays !== null
+                        ? `${selectedRow.inactiveDays} days`
+                        : "-"
+                    }
+                  />
                   <DetailItem
                     label="Usage Score"
                     value={
@@ -1138,18 +1123,26 @@ export default function CostOptimization() {
                     }
                   />
                   <DetailItem
+                    label="Transaction Count"
+                    value={selectedRow.transactionCount}
+                  />
+                  <DetailItem
+                    label="Utilization Status"
+                    value={selectedRow.utilizationStatus}
+                  />
+                  <DetailItem
                     label="Recommendation"
                     value={selectedRow.opportunityType}
                     emphasis
                   />
                   <DetailItem
-                    label="Review Priority"
-                    value={
-                      <StatusPill
-                        value={selectedRow.risk}
-                        type={getRiskType(selectedRow.risk)}
-                      />
-                    }
+                    label="Pricing Type"
+                    value={selectedRow.pricingType}
+                  />
+                  <DetailItem label="Currency" value={selectedRow.currency} />
+                  <DetailItem
+                    label="Assigned Roles"
+                    value={selectedRow.assignedRoles?.length || 0}
                   />
                 </DetailGrid>
               </DetailSection>
@@ -1158,38 +1151,5 @@ export default function CostOptimization() {
         </DetailModal>
       </div>
     </AppLayout>
-  );
-}
-
-function SignalBox({ label, value, tone = "indigo" }) {
-  const toneMap = {
-    indigo: {
-      wrap: "border-indigo-200 bg-indigo-50/80",
-      title: "text-indigo-700",
-      value: "text-indigo-800",
-    },
-    emerald: {
-      wrap: "border-emerald-200 bg-emerald-50/80",
-      title: "text-emerald-700",
-      value: "text-emerald-800",
-    },
-    amber: {
-      wrap: "border-amber-200 bg-amber-50/80",
-      title: "text-amber-700",
-      value: "text-amber-800",
-    },
-  };
-
-  const t = toneMap[tone] || toneMap.indigo;
-
-  return (
-    <div className={`rounded-xl border px-4 py-2 shadow-sm ${t.wrap}`}>
-      <p
-        className={`text-[11px] font-semibold uppercase tracking-wide ${t.title}`}
-      >
-        {label}
-      </p>
-      <p className={`mt-2 text-base font-bold ${t.value}`}>{value}</p>
-    </div>
   );
 }

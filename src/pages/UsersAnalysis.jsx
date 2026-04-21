@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import {
   Search,
   Eye,
@@ -180,6 +180,7 @@ export default function UsersAnalysis() {
   const [page, setPage] = useState(1);
 
   const [selectedUser, setSelectedUser] = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [pageError, setPageError] = useState("");
@@ -195,32 +196,41 @@ export default function UsersAnalysis() {
     return () => clearTimeout(timer);
   }, [toast]);
 
-  const loadUsers = async () => {
-    setLoading(true);
-    setPageError("");
+  const loadUsers = useCallback(
+    async (signal) => {
+      setLoading(true);
+      setPageError("");
 
-    try {
-      const data = await usersAnalysisApi.list({
-        search: searchTerm,
-        activityStatus,
-        utilizationStatus,
-        privilegedOnly,
-      });
+      try {
+        const data = await usersAnalysisApi.list(
+          {
+            search: searchTerm,
+            activityStatus,
+            utilizationStatus,
+            privilegedOnly,
+          },
+          signal,
+        );
 
-      setUsers((data.items || []).map(normalizeUser));
-      setStats({ ...EMPTY_STATS, ...(data.stats || {}) });
-    } catch (error) {
-      const message = error.message || "Failed to load users analysis.";
-      setPageError(message);
-      showToast("error", "Could not load users analysis", message);
-    } finally {
-      setLoading(false);
-    }
-  };
+        setUsers((data.items || []).map(normalizeUser));
+        setStats({ ...EMPTY_STATS, ...(data.stats || {}) });
+      } catch (error) {
+        if (error.name === "AbortError") return;
+        const message = error.message || "Failed to load users analysis.";
+        setPageError(message);
+        showToast("error", "Could not load users analysis", message);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [searchTerm, activityStatus, utilizationStatus, privilegedOnly],
+  );
 
   useEffect(() => {
-    loadUsers();
-  }, [searchTerm, activityStatus, utilizationStatus, privilegedOnly]);
+    const controller = new AbortController();
+    loadUsers(controller.signal);
+    return () => controller.abort();
+  }, [loadUsers]);
 
   const totalPages = Math.max(1, Math.ceil(users.length / PAGE_SIZE));
 
@@ -314,6 +324,20 @@ export default function UsersAnalysis() {
       )
       .slice(0, 6);
   }, [users]);
+
+  const handleViewUser = async (user) => {
+    try {
+      setDetailLoading(true);
+      const detail = await usersAnalysisApi.getById(user.id);
+      setSelectedUser(normalizeUser(detail));
+    } catch (error) {
+      const message = error.message || "Failed to load user details.";
+      showToast("error", "Could not load user details", message);
+      setSelectedUser(normalizeUser(user));
+    } finally {
+      setDetailLoading(false);
+    }
+  };
 
   const toolbar = (
     <div className="grid gap-3 2xl:grid-cols-[1.2fr_180px_180px_240px]">
@@ -845,7 +869,7 @@ export default function UsersAnalysis() {
                     <td className="px-6 py-4">
                       <button
                         type="button"
-                        onClick={() => setSelectedUser(user)}
+                        onClick={() => handleViewUser(user)}
                         className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-1 text-sm font-semibold text-slate-800 shadow-sm transition hover:bg-slate-50"
                       >
                         <Eye size={15} />
@@ -866,7 +890,11 @@ export default function UsersAnalysis() {
           subtitle="Detailed identity, usage, access, and role exposure for the selected record."
           width="max-w-6xl"
         >
-          {selectedUser ? (
+          {detailLoading ? (
+            <div className="py-12 text-center text-sm text-slate-500">
+              Loading user details...
+            </div>
+          ) : selectedUser ? (
             <div className="space-y-5">
               <div className="grid gap-4 lg:grid-cols-4">
                 <div className="rounded-xl border border-slate-200 bg-white px-5 py-3 shadow-md">
@@ -1066,7 +1094,7 @@ export default function UsersAnalysis() {
                                 />
                               </td>
                               <td className="px-3 py-4 text-slate-700">
-                                {role.assignedAt || "-"}
+                                {formatDateTime(role.assignedAt)}
                               </td>
                             </tr>
                           ))

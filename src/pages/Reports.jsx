@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import {
   Download,
   FileSpreadsheet,
@@ -49,6 +49,7 @@ const EMPTY_DATA = {
     activeUsers: 0,
     inactiveUsers: 0,
     complianceFlags: 0,
+    flaggedUsers: 0,
     totalMonthlyCost: 0,
     totalPotentialSavings: 0,
     topSavingsUser: "-",
@@ -58,6 +59,7 @@ const EMPTY_DATA = {
   preview: {
     flaggedUsers: [],
     savings: [],
+    compliance: [],
   },
 };
 
@@ -173,43 +175,53 @@ export default function Reports() {
     return () => clearTimeout(timer);
   }, [toast]);
 
-  const loadReports = async ({ isRefresh = false } = {}) => {
-    if (isRefresh) {
-      setRefreshing(true);
-    } else {
-      setLoading(true);
-    }
-
-    setPageError("");
-
-    try {
-      const response = await reportsApi.dashboard();
-      setData({
-        summary: response.summary || EMPTY_DATA.summary,
-        reportOptions: response.reportOptions || [],
-        preview: response.preview || EMPTY_DATA.preview,
-      });
-
+  const loadReports = useCallback(
+    async ({ isRefresh = false, signal } = {}) => {
       if (isRefresh) {
-        showToast(
-          "success",
-          "Reports refreshed",
-          "The reporting dashboard has been updated with latest backend data.",
-        );
+        setRefreshing(true);
+      } else {
+        setLoading(true);
       }
-    } catch (error) {
-      const message = error.message || "Failed to load reports page.";
-      setPageError(message);
-      showToast("error", "Load failed", message);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
+
+      setPageError("");
+
+      try {
+        const response = await reportsApi.dashboard(signal);
+        setData({
+          summary: response.summary || EMPTY_DATA.summary,
+          reportOptions: response.reportOptions || [],
+          preview: {
+            flaggedUsers: response.preview?.flaggedUsers || [],
+            savings: response.preview?.savings || [],
+            compliance: response.preview?.compliance || [],
+          },
+        });
+
+        if (isRefresh) {
+          showToast(
+            "success",
+            "Reports refreshed",
+            "The reporting dashboard has been updated with latest backend data.",
+          );
+        }
+      } catch (error) {
+        if (error.name === "AbortError") return;
+        const message = error.message || "Failed to load reports page.";
+        setPageError(message);
+        showToast("error", "Load failed", message);
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+      }
+    },
+    [],
+  );
 
   useEffect(() => {
-    loadReports();
-  }, []);
+    const controller = new AbortController();
+    loadReports({ signal: controller.signal });
+    return () => controller.abort();
+  }, [loadReports]);
 
   const paginatedReportOptions = useMemo(() => {
     const start = (page - 1) * PAGE_SIZE;
@@ -250,7 +262,7 @@ export default function Reports() {
       downloadBlob(blob, fileName);
       showToast(
         "success",
-        "Export started",
+        "Export complete",
         `${fileName || "CSV file"} has been downloaded.`,
       );
     } catch (error) {
@@ -290,6 +302,11 @@ export default function Reports() {
         name: "Savings Preview",
         value: (data.preview.savings || []).length,
         fill: "#10b981",
+      },
+      {
+        name: "Compliance Preview",
+        value: (data.preview.compliance || []).length,
+        fill: "#7c3aed",
       },
     ].filter((item) => item.value > 0);
   }, [data.preview]);
@@ -610,133 +627,132 @@ export default function Reports() {
           </SectionCard>
         </div>
 
-          <DataTableShell
-            title="Available Reports"
-            subtitle="Generate executive summaries and export operational CSV reports for audit, compliance, and savings review."
-            rightActions={
-              <button
-                type="button"
-                onClick={() => loadReports({ isRefresh: true })}
-                className="inline-flex h-11 items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-800 transition hover:bg-slate-50"
-              >
-                <RefreshCw
-                  size={16}
-                  className={refreshing ? "animate-spin" : ""}
-                />
-                Refresh
-              </button>
-            }
-            footer={
-              <TablePagination
-                page={page}
-                totalPages={totalPages}
-                totalItems={(data.reportOptions || []).length}
-                pageSize={PAGE_SIZE}
-                onPageChange={setPage}
+        <DataTableShell
+          title="Available Reports"
+          subtitle="Generate executive summaries and export operational CSV reports for audit, compliance, and savings review."
+          rightActions={
+            <button
+              type="button"
+              onClick={() => loadReports({ isRefresh: true })}
+              className="inline-flex h-11 items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-800 transition hover:bg-slate-50"
+            >
+              <RefreshCw
+                size={16}
+                className={refreshing ? "animate-spin" : ""}
               />
-            }
-          >
-            <table className="min-w-full">
-              <thead className="border-b border-slate-200 bg-slate-50/90">
+              Refresh
+            </button>
+          }
+          footer={
+            <TablePagination
+              page={page}
+              totalPages={totalPages}
+              totalItems={(data.reportOptions || []).length}
+              pageSize={PAGE_SIZE}
+              onPageChange={setPage}
+            />
+          }
+        >
+          <table className="min-w-full">
+            <thead className="border-b border-slate-200 bg-slate-50/90">
+              <tr>
+                <th className="px-6 py-3 text-center text-xs font-bold uppercase text-slate-500">
+                  Report
+                </th>
+                <th className="px-6 py-3 text-center text-xs font-bold uppercase text-slate-500">
+                  Description
+                </th>
+                <th className="px-6 py-3 text-center text-xs font-bold uppercase text-slate-500">
+                  Rows
+                </th>
+                <th className="px-6 py-3 text-center text-xs font-bold uppercase text-slate-500">
+                  Export
+                </th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {loading ? (
                 <tr>
-                  <th className="px-6 py-3 text-center text-xs font-bold uppercase text-slate-500">
-                    Report
-                  </th>
-                  <th className="px-6 py-3 text-center text-xs font-bold uppercase text-slate-500">
-                    Description
-                  </th>
-                  <th className="px-6 py-3 text-center text-xs font-bold uppercase text-slate-500">
-                    Rows
-                  </th>
-                  <th className="px-6 py-3 text-center text-xs font-bold uppercase text-slate-500">
-                    Export
-                  </th>
+                  <td
+                    colSpan="4"
+                    className="px-6 py-14 text-center text-sm text-slate-500"
+                  >
+                    Loading reports...
+                  </td>
                 </tr>
-              </thead>
-
-              <tbody>
-                {loading ? (
-                  <tr>
-                    <td
-                      colSpan="4"
-                      className="px-6 py-14 text-center text-sm text-slate-500"
-                    >
-                      Loading reports...
-                    </td>
-                  </tr>
-                ) : paginatedReportOptions.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan="4"
-                      className="px-6 py-14 text-center text-sm text-slate-500"
-                    >
-                      No reports available.
-                    </td>
-                  </tr>
-                ) : (
-                  paginatedReportOptions.map((report) => (
-                    <tr
-                      key={report.key}
-                      className="border-b border-slate-100 transition hover:bg-slate-50/80"
-                    >
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-700">
-                            {getReportIcon(report.key)}
-                          </div>
-                          <div className="flex gap-2">
-                            <p className="font-semibold text-slate-950">
-                              {report.title}
-                            </p>
-                            <div className="capitalize">
-                              <StatusPill
-                                value={report.key}
-                                type={getReportTone(report.key)}
-                                size="sm"
-                              />
-                            </div>
-                          </div>
+              ) : paginatedReportOptions.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan="4"
+                    className="px-6 py-14 text-center text-sm text-slate-500"
+                  >
+                    No reports available.
+                  </td>
+                </tr>
+              ) : (
+                paginatedReportOptions.map((report) => (
+                  <tr
+                    key={report.key}
+                    className="border-b border-slate-100 transition hover:bg-slate-50/80"
+                  >
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-700">
+                          {getReportIcon(report.key)}
                         </div>
-                      </td>
-
-                      <td className="px-6 py-4 text-sm text-slate-600">
-                        {report.description}
-                      </td>
-
-                      <td className="px-6 py-4 text-sm font-semibold text-center text-slate-900">
-                        {report.rowCount}
-                      </td>
-
-                      <td className="px-6 py-4 flex justify-center items-center">
                         <div className="flex gap-2">
-                          <button
-                            type="button"
-                            onClick={() => openPreview(report)}
-                            className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-3 py-1 text-sm font-semibold text-slate-800 shadow-sm transition hover:bg-slate-50"
-                          >
-                            <Eye size={15} />
-                            Preview
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => handleExport(report.key)}
-                            className="inline-flex items-center gap-2 rounded-xl border border-slate-900 bg-indigo-900 px-3 py-1 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500"
-                          >
-                            <Download size={15} />
-                            Export CSV
-                          </button>
+                          <p className="font-semibold text-slate-950">
+                            {report.title}
+                          </p>
+                          <div className="capitalize">
+                            <StatusPill
+                              value={report.key}
+                              type={getReportTone(report.key)}
+                              size="sm"
+                            />
+                          </div>
                         </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </DataTableShell>
+                      </div>
+                    </td>
 
+                    <td className="px-6 py-4 text-sm text-slate-600">
+                      {report.description}
+                    </td>
 
-        <div className="grid gap-4 xl:grid-cols-2">
+                    <td className="px-6 py-4 text-sm font-semibold text-center text-slate-900">
+                      {report.rowCount}
+                    </td>
+
+                    <td className="px-6 py-4 flex justify-center items-center">
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => openPreview(report)}
+                          className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-3 py-1 text-sm font-semibold text-slate-800 shadow-sm transition hover:bg-slate-50"
+                        >
+                          <Eye size={15} />
+                          Preview
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleExport(report.key)}
+                          className="inline-flex items-center gap-2 rounded-xl border border-slate-900 bg-indigo-900 px-3 py-1 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500"
+                        >
+                          <Download size={15} />
+                          Export CSV
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </DataTableShell>
+
+        <div className="grid gap-4 xl:grid-cols-3">
           <PreviewPanel
             title="Top Flagged Users"
             icon={<ShieldAlert size={16} />}
@@ -771,6 +787,25 @@ export default function Reports() {
                 <p className="text-sm font-bold text-slate-900">
                   {formatCurrency(row.potentialSavings)}
                 </p>
+              </div>
+            )}
+          />
+
+          <PreviewPanel
+            title="Compliance Preview"
+            icon={<ShieldCheck size={16} />}
+            rows={data.preview.compliance || []}
+            emptyText="No compliance preview available."
+            renderRow={(row) => (
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <p className="font-semibold text-slate-950">{row.fullName}</p>
+                  <p className="text-sm text-slate-500">{row.roleName}</p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {row.exceptionType}
+                  </p>
+                </div>
+                <StatusPill value={row.severity} type="error" size="sm" />
               </div>
             )}
           />

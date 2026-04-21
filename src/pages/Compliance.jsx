@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import {
   Search,
   Eye,
@@ -95,6 +95,11 @@ function normalizeCompliance(item) {
     exceptionType: item?.exceptionType ?? "-",
     severity: item?.severity ?? "Low",
     reason: item?.reason ?? "-",
+    status: item?.status ?? "OPEN",
+    detectedAt: item?.detectedAt ?? null,
+    resolvedAt: item?.resolvedAt ?? null,
+    createdAt: item?.createdAt ?? null,
+    updatedAt: item?.updatedAt ?? null,
   };
 }
 
@@ -211,6 +216,8 @@ export default function Compliance() {
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [rebuilding, setRebuilding] = useState(false);
   const [pageError, setPageError] = useState("");
   const [toast, setToast] = useState(null);
 
@@ -224,49 +231,58 @@ export default function Compliance() {
     return () => clearTimeout(timer);
   }, [toast]);
 
-  const loadCompliance = async ({ isRefresh = false } = {}) => {
-    if (isRefresh) {
-      setRefreshing(true);
-    } else {
-      setLoading(true);
-    }
-
-    setPageError("");
-
-    try {
-      const data = await complianceApi.list({
-        search: searchTerm,
-        severity,
-        exceptionType,
-        sortBy,
-        privilegedOnly,
-        adminOnly,
-      });
-
-      const normalized = (data.items || []).map(normalizeCompliance);
-      setRecords(normalized);
-      setStats({ ...EMPTY_STATS, ...(data.stats || {}) });
-
+  const loadCompliance = useCallback(
+    async ({ isRefresh = false, signal } = {}) => {
       if (isRefresh) {
-        showToast(
-          "success",
-          "Compliance data refreshed",
-          "The page has been updated using latest backend records.",
-        );
+        setRefreshing(true);
+      } else {
+        setLoading(true);
       }
-    } catch (error) {
-      const message = error.message || "Failed to load compliance page.";
-      setPageError(message);
-      showToast("error", "Load failed", message);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
+
+      setPageError("");
+
+      try {
+        const data = await complianceApi.list(
+          {
+            search: searchTerm,
+            severity,
+            exceptionType,
+            sortBy,
+            privilegedOnly,
+            adminOnly,
+          },
+          signal,
+        );
+
+        const normalized = (data.items || []).map(normalizeCompliance);
+        setRecords(normalized);
+        setStats({ ...EMPTY_STATS, ...(data.stats || {}) });
+
+        if (isRefresh) {
+          showToast(
+            "success",
+            "Compliance data refreshed",
+            "The page has been updated using latest backend records.",
+          );
+        }
+      } catch (error) {
+        if (error.name === "AbortError") return;
+        const message = error.message || "Failed to load compliance page.";
+        setPageError(message);
+        showToast("error", "Load failed", message);
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+      }
+    },
+    [searchTerm, severity, exceptionType, sortBy, privilegedOnly, adminOnly],
+  );
 
   useEffect(() => {
-    loadCompliance();
-  }, [searchTerm, severity, exceptionType, sortBy, privilegedOnly, adminOnly]);
+    const controller = new AbortController();
+    loadCompliance({ signal: controller.signal });
+    return () => controller.abort();
+  }, [loadCompliance]);
 
   const totalPages = Math.max(1, Math.ceil(records.length / PAGE_SIZE));
 
@@ -375,6 +391,52 @@ export default function Compliance() {
     stats.mostCommonException ||
     exceptionPatternData[0]?.name ||
     EMPTY_STATS.mostCommonException;
+
+  const handleRebuildCompliance = async () => {
+    try {
+      setRebuilding(true);
+      await complianceApi.rebuild();
+      await loadCompliance({ isRefresh: true });
+      showToast(
+        "success",
+        "Compliance rebuilt",
+        "Compliance exceptions were rebuilt successfully.",
+      );
+    } catch (error) {
+      showToast(
+        "error",
+        "Rebuild failed",
+        error.message || "Failed to rebuild compliance records.",
+      );
+    } finally {
+      setRebuilding(false);
+    }
+  };
+
+  const handleViewRecord = async (record) => {
+    try {
+      setDetailLoading(true);
+      const detail = await complianceApi.getById(record.id);
+      setSelectedRecord(normalizeCompliance(detail));
+    } catch (error) {
+      setSelectedRecord(record);
+      showToast(
+        "error",
+        "Could not load full details",
+        error.message || "Showing available row data instead.",
+      );
+    } finally {
+      setDetailLoading(false);
+    }
+  };
+
+  const handleExportPlaceholder = () => {
+    showToast(
+      "error",
+      "Export not wired yet",
+      "The compliance export endpoint is not connected on this page yet.",
+    );
+  };
 
   const toolbar = (
     <div className="grid gap-3 xl:grid-cols-[minmax(0,1.2fr)_180px_220px_180px]">
@@ -647,6 +709,7 @@ export default function Compliance() {
                 ) : null}
               </div>
             </SectionCard>
+
             <SectionCard
               title="Exposure Snapshot"
               subtitle="Live operational counts derived from visible compliance records"
@@ -837,6 +900,19 @@ export default function Compliance() {
 
                 <button
                   type="button"
+                  onClick={handleRebuildCompliance}
+                  className="inline-flex h-9 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                >
+                  <RefreshCw
+                    size={16}
+                    className={rebuilding ? "animate-spin" : ""}
+                  />
+                  Rebuild Compliance
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleExportPlaceholder}
                   className="inline-flex h-9 items-center gap-2 rounded-xl border border-slate-200 bg-indigo-700 px-4 text-sm font-semibold text-white transition hover:bg-indigo-600"
                 >
                   <Download size={16} />
@@ -982,7 +1058,7 @@ export default function Compliance() {
                         <td className="px-4 py-4">
                           <button
                             type="button"
-                            onClick={() => setSelectedRecord(record)}
+                            onClick={() => handleViewRecord(record)}
                             className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white px-2 py-1 text-sm text-slate-800 shadow-sm transition hover:bg-slate-50"
                           >
                             <Eye size={15} />
@@ -1030,7 +1106,11 @@ export default function Compliance() {
           }
           width="max-w-5xl"
         >
-          {selectedRecord ? (
+          {detailLoading ? (
+            <div className="py-12 text-center text-sm text-slate-500">
+              Loading compliance details...
+            </div>
+          ) : selectedRecord ? (
             <div className="space-y-5">
               <div className="grid gap-4 lg:grid-cols-4">
                 <MiniKpi
@@ -1187,6 +1267,15 @@ export default function Compliance() {
                         ? `${selectedRecord.inactiveDays} days`
                         : "-"
                     }
+                  />
+                  <DetailItem label="Status" value={selectedRecord.status} />
+                  <DetailItem
+                    label="Detected At"
+                    value={formatDateTime(selectedRecord.detectedAt)}
+                  />
+                  <DetailItem
+                    label="Resolved At"
+                    value={formatDateTime(selectedRecord.resolvedAt)}
                   />
                 </DetailGrid>
 

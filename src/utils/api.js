@@ -1,3 +1,5 @@
+// src/utils/api.js
+
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
 
@@ -55,6 +57,28 @@ export const toQueryString = (params = {}) => {
   return query ? `?${query}` : "";
 };
 
+const downloadWithAuth = async (endpoint, fallbackFileName) => {
+  const token = localStorage.getItem("token");
+
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    method: "GET",
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error("Download failed.");
+  }
+
+  const blob = await response.blob();
+  const contentDisposition = response.headers.get("content-disposition") || "";
+  const match = contentDisposition.match(/filename="(.+)"/);
+  const fileName = match?.[1] || fallbackFileName;
+
+  return { blob, fileName };
+};
+
 // -------- Auth ------------
 export const authApi = {
   register: async ({ name, email, password }) => {
@@ -76,6 +100,38 @@ export const authApi = {
       method: "GET",
       signal,
     });
+  },
+};
+
+// -------- Dashboard -----------
+export const dashboardApi = {
+  get: async (signal) => {
+    const response = await apiRequest("/dashboard", {
+      method: "GET",
+      signal,
+    });
+
+    return (
+      response?.data || {
+        kpis: {},
+        charts: {
+          activityMix: [],
+          utilizationMix: [],
+          uploadStatusMix: [],
+          importStatusMix: [],
+          departmentRisk: [],
+          savingsByDepartment: [],
+        },
+        highlights: {
+          topSavingsUsers: [],
+          topFlaggedUsers: [],
+        },
+        recent: {
+          uploads: [],
+          imports: [],
+        },
+      }
+    );
   },
 };
 
@@ -158,6 +214,40 @@ export const fileApi = {
   },
 };
 
+// -------- Cost Optimization -----------
+export const costOptimizationApi = {
+  list: async (filters = {}, signal) => {
+    const query = toQueryString(filters);
+    const response = await apiRequest(`/cost-optimization${query}`, {
+      method: "GET",
+      signal,
+    });
+
+    return (
+      response?.data || {
+        items: [],
+        stats: {},
+      }
+    );
+  },
+
+  getById: async (id, signal) => {
+    const response = await apiRequest(`/cost-optimization/${id}`, {
+      method: "GET",
+      signal,
+    });
+
+    return response?.data;
+  },
+
+  exportCsv: async () => {
+    return downloadWithAuth(
+      "/cost-optimization/export",
+      "cost-optimization-report.csv",
+    );
+  },
+};
+
 // -------- Users Analysis -----------
 export const usersAnalysisApi = {
   list: async (filters = {}, signal) => {
@@ -184,7 +274,6 @@ export const usersAnalysisApi = {
     return response?.data;
   },
 };
-
 
 // -------- Compliance -----------
 export const complianceApi = {
@@ -220,6 +309,14 @@ export const complianceApi = {
 
     return response?.data || {};
   },
+
+  rebuild: async () => {
+    const response = await apiRequest(`/compliance/rebuild`, {
+      method: "POST",
+    });
+
+    return response?.data || {};
+  },
 };
 
 // -------- Reports -----------
@@ -230,14 +327,17 @@ export const reportsApi = {
       signal,
     });
 
-    return response?.data || {
-      summary: {},
-      reportOptions: [],
-      preview: {
-        flaggedUsers: [],
-        savings: [],
-      },
-    };
+    return (
+      response?.data || {
+        summary: {},
+        reportOptions: [],
+        preview: {
+          flaggedUsers: [],
+          savings: [],
+          compliance: [],
+        },
+      }
+    );
   },
 
   preview: async (reportType, signal) => {
@@ -246,34 +346,18 @@ export const reportsApi = {
       signal,
     });
 
-    return response?.data || {
-      fileName: "",
-      rows: [],
-    };
+    return (
+      response?.data || {
+        fileName: "",
+        rows: [],
+      }
+    );
   },
 
   exportCsv: async (reportType) => {
-    const token = localStorage.getItem("token");
-
-    const response = await fetch(
-      `${API_BASE_URL}/reports/${reportType}/export`,
-      {
-        method: "GET",
-        headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-      },
+    return downloadWithAuth(
+      `/reports/${reportType}/export`,
+      `${reportType}-report.csv`,
     );
-
-    if (!response.ok) {
-      throw new Error("Failed to export report.");
-    }
-
-    const blob = await response.blob();
-    const contentDisposition = response.headers.get("content-disposition") || "";
-    const match = contentDisposition.match(/filename="(.+)"/);
-    const fileName = match?.[1] || `${reportType}-report.csv`;
-
-    return { blob, fileName };
   },
 };

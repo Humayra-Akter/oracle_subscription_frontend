@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import {
   Upload,
   RotateCcw,
@@ -106,8 +106,10 @@ function normalizeQueueItem(item) {
     storedName: item.storedName,
     fileType: item.fileType,
     reportType: item.reportType,
+    fileCategory: item.fileCategory,
     uploadedAt: item.uploadedAt || null,
     status: normalizeStatus(item.status),
+    rawStatus: item.status,
     fileSizeBytes: item.fileSizeBytes || 0,
     sizeLabel: formatFileSize(item.fileSizeBytes || 0),
     uploadedBy: item.uploadedBy || "-",
@@ -278,25 +280,28 @@ export default function UploadCenter() {
     if (page > totalPages) setPage(1);
   }, [page, totalPages]);
 
-  const loadQueue = async () => {
+  const loadQueue = useCallback(async (signal) => {
     setLoading(true);
     setPageError("");
 
     try {
-      const data = await fileApi.list();
+      const data = await fileApi.list(signal);
       setQueue((data || []).map(normalizeQueueItem));
     } catch (error) {
+      if (error.name === "AbortError") return;
       const message = error.message || "Failed to load upload queue.";
       setPageError(message);
       showToast("error", "Could not load upload queue", message);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    loadQueue();
-  }, []);
+    const controller = new AbortController();
+    loadQueue(controller.signal);
+    return () => controller.abort();
+  }, [loadQueue]);
 
   const getExtension = (name) => {
     const index = name.lastIndexOf(".");
@@ -339,6 +344,7 @@ export default function UploadCenter() {
 
       await loadQueue();
       if (inputRef.current) inputRef.current.value = "";
+
       showToast(
         "success",
         `${files.length} file${files.length > 1 ? "s" : ""} uploaded`,
@@ -359,6 +365,7 @@ export default function UploadCenter() {
       setPageError("");
       await fileApi.retry(id);
       await loadQueue();
+
       showToast(
         "success",
         "Retry started",
@@ -379,7 +386,11 @@ export default function UploadCenter() {
       setPageError("");
       await fileApi.remove(id);
       await loadQueue();
-      if (selectedRow?.id === id) setSelectedRow(null);
+
+      if (selectedRow?.id === id) {
+        setSelectedRow(null);
+      }
+
       showToast(
         "success",
         "File deleted",
@@ -490,6 +501,7 @@ export default function UploadCenter() {
             </p>
           </div>
         </section>
+
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <StatusCard
             title="Total Files"
@@ -607,7 +619,7 @@ export default function UploadCenter() {
 
                     <button
                       type="button"
-                      onClick={loadQueue}
+                      onClick={() => loadQueue()}
                       disabled={loading}
                       className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
                     >
@@ -752,6 +764,7 @@ export default function UploadCenter() {
               </div>
             </SectionCard>
           </div>
+
           <div>
             <SectionCard
               title="Report Distribution"
@@ -857,7 +870,7 @@ export default function UploadCenter() {
           footer={footer}
           rightActions={
             <div className="inline-flex items-center gap-2 rounded-full border border-brand-100 bg-brand-50/70 px-3 py-1.5 text-xs font-semibold text-brand-700">
-              <FileSpreadsheet className="h-4 w-4 text-indigo-700"/>
+              <FileSpreadsheet className="h-4 w-4 text-indigo-700" />
               {filteredQueue.length} visible of {queue.length} files
             </div>
           }
@@ -968,7 +981,7 @@ export default function UploadCenter() {
                           <Eye size={15} />
                         </button>
 
-                        {item.status === "Failed" ? (
+                        {item.status !== "Completed" ? (
                           <button
                             type="button"
                             disabled={busyId === item.id}
@@ -1044,6 +1057,56 @@ export default function UploadCenter() {
                   <DetailItem
                     label="Error"
                     value={selectedRow.error || "No error message"}
+                    fullWidth
+                  />
+                </DetailGrid>
+              </DetailSection>
+
+              <DetailSection title="Latest Import Activity">
+                <DetailGrid>
+                  <DetailItem
+                    label="Import Code"
+                    value={selectedRow.latestImportHistory?.importCode || "-"}
+                    emphasis
+                  />
+                  <DetailItem
+                    label="Import Status"
+                    value={
+                      selectedRow.latestImportHistory?.status ? (
+                        <StatusPill
+                          value={normalizeStatus(
+                            selectedRow.latestImportHistory.status,
+                          )}
+                          type={getStatusTone(
+                            normalizeStatus(
+                              selectedRow.latestImportHistory.status,
+                            ),
+                          )}
+                        />
+                      ) : (
+                        "-"
+                      )
+                    }
+                  />
+                  <DetailItem
+                    label="Rows Processed"
+                    value={
+                      selectedRow.latestImportHistory?.rowsProcessed ?? "-"
+                    }
+                  />
+                  <DetailItem
+                    label="Imported By"
+                    value={selectedRow.latestImportHistory?.importedBy || "-"}
+                  />
+                  <DetailItem
+                    label="Created At"
+                    value={formatDateTime(
+                      selectedRow.latestImportHistory?.createdAt,
+                    )}
+                  />
+                  <DetailItem
+                    label="Message"
+                    value={selectedRow.latestImportHistory?.message || "-"}
                     fullWidth
                   />
                 </DetailGrid>
